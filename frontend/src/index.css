@@ -1,3 +1,12 @@
 @import "tailwindcss";
 @import "@heroui/styles";
 @import "./styles/design-tokens.css";
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
