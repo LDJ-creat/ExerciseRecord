@@ -38,6 +38,10 @@ func Unauthorized(c *gin.Context, message string) {
 	Error(c, http.StatusUnauthorized, CodeUnauthorized, message)
 }
 
+func Forbidden(c *gin.Context, message string) {
+	Error(c, http.StatusForbidden, CodeForbidden, message)
+}
+
 func Conflict(c *gin.Context, message string) {
 	Error(c, http.StatusConflict, CodeConflict, message)
 }

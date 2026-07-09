@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import {
   Button,
   Input,
@@ -13,7 +12,7 @@ import {
   updateProfile,
   type UserProfile,
 } from '../../api/auth'
-import { clearAuth, getUser, updateStoredUser } from '../../store/auth'
+import { getUser, updateStoredUser } from '../../store/auth'
 
 const GENDER_OPTIONS = [
   { id: '0', label: '未知' },
@@ -22,7 +21,6 @@ const GENDER_OPTIONS = [
 ]
 
 export default function Profile() {
-  const navigate = useNavigate()
   const storedUser = getUser()
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(true)
@@ -134,14 +132,9 @@ export default function Profile() {
     }
   }
 
-  function handleLogout() {
-    clearAuth()
-    navigate('/login')
-  }
-
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[var(--color-bg)]">
+      <div className="flex items-center justify-center py-16">
         <p className="font-[family-name:var(--font-body)] text-[var(--color-text-muted)]">
           加载中…
         </p>
@@ -150,28 +143,20 @@ export default function Profile() {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--color-bg)]">
-      <header className="border-b border-[var(--color-border)] bg-[var(--color-surface)] px-6 py-4">
-        <div className="mx-auto flex max-w-3xl items-center justify-between">
-          <h1 className="font-[family-name:var(--font-display)] text-xl font-semibold text-[var(--color-text)]">
-            个人资料
-          </h1>
-          <div className="flex items-center gap-4">
-            <span className="font-[family-name:var(--font-body)] text-sm text-[var(--color-text-muted)]">
-              {profile?.nickname ?? storedUser?.nickname}
-            </span>
-            <Button variant="ghost" size="sm" onPress={handleLogout}>
-              退出
-            </Button>
-          </div>
-        </div>
-      </header>
+    <div className="mx-auto max-w-3xl">
+      <div className="mb-6">
+        <h1 className="font-[family-name:var(--font-display)] text-2xl font-semibold text-[var(--color-text)]">
+          个人资料
+        </h1>
+        <p className="mt-1 font-[family-name:var(--font-body)] text-sm text-[var(--color-text-muted)]">
+          {profile?.nickname ?? storedUser?.nickname}
+        </p>
+      </div>
 
-      <main className="mx-auto max-w-3xl px-6 py-8">
-        <div
-          className="rounded-[var(--radius-md)] bg-[var(--color-surface)] p-6"
-          style={{ boxShadow: 'var(--shadow-card)' }}
-        >
+      <div
+        className="rounded-[var(--radius-md)] bg-[var(--color-surface)] p-6"
+        style={{ boxShadow: 'var(--shadow-card)' }}
+      >
           <Tabs>
             <Tabs.ListContainer>
               <Tabs.List aria-label="资料设置">
@@ -309,7 +294,6 @@ export default function Profile() {
             </Tabs.Panel>
           </Tabs>
         </div>
-      </main>
     </div>
   )
 }
