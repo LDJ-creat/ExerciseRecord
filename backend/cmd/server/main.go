@@ -24,6 +24,7 @@ func main() {
 	userService := service.NewUserService(db)
 	checkInService := service.NewCheckInService(db)
 	goalService := service.NewGoalService(db)
+	statsService := service.NewStatsService(db)
 	calendarService := service.NewCalendarService(db)
 	reminderService := service.NewReminderService(db)
 	authHandler := handler.NewAuthHandler(authService, cfg.JWTSecret)
@@ -31,6 +32,7 @@ func main() {
 	sportHandler := handler.NewSportHandler(db)
 	checkInHandler := handler.NewCheckInHandler(checkInService)
 	goalHandler := handler.NewGoalHandler(goalService)
+	statsHandler := handler.NewStatsHandler(statsService)
 	calendarHandler := handler.NewCalendarHandler(calendarService)
 	reminderHandler := handler.NewReminderHandler(reminderService)
 
@@ -74,6 +76,13 @@ func main() {
 			goal.GET("/progress", goalHandler.Progress)
 			goal.GET("", goalHandler.List)
 			goal.PUT("/:id", goalHandler.Update)
+		}
+
+		stats := api.Group("/stats")
+		stats.Use(middleware.AuthMiddleware(cfg.JWTSecret))
+		{
+			stats.GET("/personal", statsHandler.Personal)
+			stats.GET("/ranking", statsHandler.Ranking)
 		}
 
 		api.GET("/calendar", middleware.AuthMiddleware(cfg.JWTSecret), calendarHandler.Get)
