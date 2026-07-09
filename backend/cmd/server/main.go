@@ -24,11 +24,15 @@ func main() {
 	userService := service.NewUserService(db)
 	checkInService := service.NewCheckInService(db)
 	goalService := service.NewGoalService(db)
+	calendarService := service.NewCalendarService(db)
+	reminderService := service.NewReminderService(db)
 	authHandler := handler.NewAuthHandler(authService, cfg.JWTSecret)
 	userHandler := handler.NewUserHandler(userService)
 	sportHandler := handler.NewSportHandler(db)
 	checkInHandler := handler.NewCheckInHandler(checkInService)
 	goalHandler := handler.NewGoalHandler(goalService)
+	calendarHandler := handler.NewCalendarHandler(calendarService)
+	reminderHandler := handler.NewReminderHandler(reminderService)
 
 	r := gin.Default()
 	r.GET("/health", func(c *gin.Context) {
@@ -70,6 +74,17 @@ func main() {
 			goal.GET("/progress", goalHandler.Progress)
 			goal.GET("", goalHandler.List)
 			goal.PUT("/:id", goalHandler.Update)
+		}
+
+		api.GET("/calendar", middleware.AuthMiddleware(cfg.JWTSecret), calendarHandler.Get)
+
+		reminder := api.Group("/reminder")
+		reminder.Use(middleware.AuthMiddleware(cfg.JWTSecret))
+		{
+			reminder.GET("", reminderHandler.GetSettings)
+			reminder.PUT("", reminderHandler.UpdateSettings)
+			reminder.GET("/logs", reminderHandler.ListLogs)
+			reminder.POST("/logs", reminderHandler.CreateLog)
 		}
 	}
 
