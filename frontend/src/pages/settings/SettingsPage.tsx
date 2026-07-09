@@ -1,10 +1,9 @@
 import { Link } from 'react-router-dom'
-import { PlaceholderPage } from '../../components/PlaceholderPage'
 
 const SETTINGS_LINKS = [
   { path: '/settings/profile', label: '个人资料', desc: '昵称、头像、身高体重' },
-  { path: '/settings/reminder', label: '打卡提醒', desc: '提醒时间与浏览器通知', taskId: 'T05-04' },
-  { path: '/settings/reminder-history', label: '提醒历史', desc: '查看提醒发送记录', taskId: 'T05-05' },
+  { path: '/settings/reminder', label: '打卡提醒', desc: '提醒时间与浏览器通知' },
+  { path: '/settings/reminder-history', label: '提醒历史', desc: '查看提醒发送记录' },
 ] as const
 
 export default function SettingsPage() {
@@ -39,11 +38,6 @@ export default function SettingsPage() {
           </Link>
         ))}
       </div>
-
-      <PlaceholderPage
-        title="更多设置"
-        description="提醒相关功能将在 Wave 3 逐步实现。"
-      />
     </div>
   )
 }

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { Button } from '@heroui/react'
 import { clearAuth, getUser } from '../store/auth'
+import { useReminder } from '../hooks/useReminder'
 
 const NAV_ITEMS = [
   { path: '/checkin', label: '打卡', icon: NavIconCheckin },
@@ -116,6 +117,7 @@ export function AppLayout() {
   const navigate = useNavigate()
   const user = getUser()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  useReminder()
 
   function handleLogout() {
     clearAuth()
