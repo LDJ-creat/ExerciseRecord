@@ -50,6 +50,49 @@
 .sport-fitness { --sport-color: #F59E0B; }
 .sport-other { --sport-color: #94A3B8; }
 
+/* Lane Stripe signature animation */
+.lane-stripe {
+  transform: rotate(-2deg);
+  max-width: 200px;
+}
+
+.lane-stripe__line {
+  display: block;
+  height: 3px;
+  border-radius: 2px;
+  transform-origin: left center;
+  animation: lane-stripe-draw 600ms ease-out forwards;
+}
+
+.lane-stripe__line--1 {
+  width: 100%;
+  background: var(--color-primary);
+  animation-delay: 0ms;
+}
+
+.lane-stripe__line--2 {
+  width: 85%;
+  background: var(--color-secondary);
+  animation-delay: 100ms;
+}
+
+.lane-stripe__line--3 {
+  width: 70%;
+  background: var(--color-accent);
+  animation-delay: 200ms;
+}
+
+@keyframes lane-stripe-draw {
+  from {
+    transform: scaleX(0);
+    opacity: 0.4;
+  }
+  to {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
