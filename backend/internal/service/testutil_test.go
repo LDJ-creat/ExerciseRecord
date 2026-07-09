@@ -23,6 +23,7 @@ func setupTestDB(t *testing.T) *gorm.DB {
 		&model.ReminderSetting{},
 		&model.SportType{},
 		&model.CheckIn{},
+		&model.Goal{},
 	))
 	return db
 }

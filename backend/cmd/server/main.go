@@ -23,10 +23,12 @@ func main() {
 	authService := service.NewAuthService(db)
 	userService := service.NewUserService(db)
 	checkInService := service.NewCheckInService(db)
+	goalService := service.NewGoalService(db)
 	authHandler := handler.NewAuthHandler(authService, cfg.JWTSecret)
 	userHandler := handler.NewUserHandler(userService)
 	sportHandler := handler.NewSportHandler(db)
 	checkInHandler := handler.NewCheckInHandler(checkInService)
+	goalHandler := handler.NewGoalHandler(goalService)
 
 	r := gin.Default()
 	r.GET("/health", func(c *gin.Context) {
@@ -59,6 +61,15 @@ func main() {
 			checkin.GET("/:id", checkInHandler.Get)
 			checkin.PUT("/:id", checkInHandler.Update)
 			checkin.DELETE("/:id", checkInHandler.Delete)
+		}
+
+		goal := api.Group("/goal")
+		goal.Use(middleware.AuthMiddleware(cfg.JWTSecret))
+		{
+			goal.POST("", goalHandler.Create)
+			goal.GET("/progress", goalHandler.Progress)
+			goal.GET("", goalHandler.List)
+			goal.PUT("/:id", goalHandler.Update)
 		}
 	}
 
