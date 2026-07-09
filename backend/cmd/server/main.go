@@ -23,12 +23,18 @@ func main() {
 	authService := service.NewAuthService(db)
 	userService := service.NewUserService(db)
 	checkInService := service.NewCheckInService(db)
+	goalService := service.NewGoalService(db)
 	statsService := service.NewStatsService(db)
+	calendarService := service.NewCalendarService(db)
+	reminderService := service.NewReminderService(db)
 	authHandler := handler.NewAuthHandler(authService, cfg.JWTSecret)
 	userHandler := handler.NewUserHandler(userService)
 	sportHandler := handler.NewSportHandler(db)
 	checkInHandler := handler.NewCheckInHandler(checkInService)
+	goalHandler := handler.NewGoalHandler(goalService)
 	statsHandler := handler.NewStatsHandler(statsService)
+	calendarHandler := handler.NewCalendarHandler(calendarService)
+	reminderHandler := handler.NewReminderHandler(reminderService)
 
 	r := gin.Default()
 	r.GET("/health", func(c *gin.Context) {
@@ -63,11 +69,31 @@ func main() {
 			checkin.DELETE("/:id", checkInHandler.Delete)
 		}
 
+		goal := api.Group("/goal")
+		goal.Use(middleware.AuthMiddleware(cfg.JWTSecret))
+		{
+			goal.POST("", goalHandler.Create)
+			goal.GET("/progress", goalHandler.Progress)
+			goal.GET("", goalHandler.List)
+			goal.PUT("/:id", goalHandler.Update)
+		}
+
 		stats := api.Group("/stats")
 		stats.Use(middleware.AuthMiddleware(cfg.JWTSecret))
 		{
 			stats.GET("/personal", statsHandler.Personal)
 			stats.GET("/ranking", statsHandler.Ranking)
+		}
+
+		api.GET("/calendar", middleware.AuthMiddleware(cfg.JWTSecret), calendarHandler.Get)
+
+		reminder := api.Group("/reminder")
+		reminder.Use(middleware.AuthMiddleware(cfg.JWTSecret))
+		{
+			reminder.GET("", reminderHandler.GetSettings)
+			reminder.PUT("", reminderHandler.UpdateSettings)
+			reminder.GET("/logs", reminderHandler.ListLogs)
+			reminder.POST("/logs", reminderHandler.CreateLog)
 		}
 	}
 
