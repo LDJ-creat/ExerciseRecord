@@ -23,7 +23,7 @@ export default function Login() {
         return
       }
       setAuth(res.data.token, res.data.user)
-      navigate('/profile')
+      navigate('/checkin')
     } catch {
       setError('用户名或密码错误')
     } finally {
