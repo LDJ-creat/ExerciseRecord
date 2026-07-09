@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/spf13/viper"
 )
@@ -17,8 +18,36 @@ type Config struct {
 	JWTSecret string
 }
 
+func findEnvFile() string {
+	if p := os.Getenv("ENV_FILE"); p != "" {
+		return p
+	}
+	cwd, err := os.Getwd()
+	if err != nil {
+		return ".env"
+	}
+	dir := cwd
+	for {
+		candidates := []string{
+			filepath.Join(dir, ".env"),
+			filepath.Join(dir, "backend", ".env"),
+		}
+		for _, candidate := range candidates {
+			if _, err := os.Stat(candidate); err == nil {
+				return candidate
+			}
+		}
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			break
+		}
+		dir = parent
+	}
+	return ".env"
+}
+
 func Load() *Config {
-	viper.SetConfigFile(".env")
+	viper.SetConfigFile(findEnvFile())
 	viper.AutomaticEnv()
 
 	_ = viper.ReadInConfig()

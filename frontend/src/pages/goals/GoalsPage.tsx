@@ -327,9 +327,14 @@ export default function GoalsPage() {
       <Tabs selectedKey={mainTab} onSelectionChange={(key) => setMainTab(String(key))}>
         <Tabs.ListContainer>
           <Tabs.List aria-label="目标视图">
-            <Tabs.Tab id="current">当前进度</Tabs.Tab>
-            <Tabs.Tab id="history">历史记录</Tabs.Tab>
-            <Tabs.Indicator />
+            <Tabs.Tab id="current">
+              当前进度
+              <Tabs.Indicator />
+            </Tabs.Tab>
+            <Tabs.Tab id="history">
+              历史记录
+              <Tabs.Indicator />
+            </Tabs.Tab>
           </Tabs.List>
         </Tabs.ListContainer>
 
@@ -359,19 +364,24 @@ export default function GoalsPage() {
               {activeGoal ? '调整目标' : '设定目标'}
             </h2>
 
-            <Tabs
-              selectedKey={periodTab}
-              onSelectionChange={(key) => setPeriodTab(String(key))}
-              className="mb-4"
-            >
-              <Tabs.ListContainer>
-                <Tabs.List aria-label="周期类型">
-                  <Tabs.Tab id={String(PERIOD_WEEK)}>周目标</Tabs.Tab>
-                  <Tabs.Tab id={String(PERIOD_MONTH)}>月目标</Tabs.Tab>
-                  <Tabs.Indicator />
-                </Tabs.List>
-              </Tabs.ListContainer>
-            </Tabs>
+            <div className="mb-4 flex gap-2" role="group" aria-label="周期类型">
+              <Button
+                type="button"
+                variant={periodType === PERIOD_WEEK ? 'primary' : 'ghost'}
+                size="sm"
+                onPress={() => setPeriodTab(String(PERIOD_WEEK))}
+              >
+                周目标
+              </Button>
+              <Button
+                type="button"
+                variant={periodType === PERIOD_MONTH ? 'primary' : 'ghost'}
+                size="sm"
+                onPress={() => setPeriodTab(String(PERIOD_MONTH))}
+              >
+                月目标
+              </Button>
+            </div>
 
             <p className="mb-4 text-sm text-[var(--color-text-muted)]">
               周期：{formatPeriodRange(getPeriodRange(periodType).start, getPeriodRange(periodType).end)}

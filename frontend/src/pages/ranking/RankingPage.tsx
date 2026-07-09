@@ -150,48 +150,51 @@ export default function RankingPage() {
           </p>
         ) : (
           <Table aria-label="运动排行榜">
-            <Table.Header>
-              <Table.Column isRowHeader>排名</Table.Column>
-              <Table.Column>用户</Table.Column>
-              <Table.Column className="text-right">
-                {DIMENSION_OPTIONS.find((d) => d.value === dimension)?.label}
-              </Table.Column>
-            </Table.Header>
-            <Table.Body items={data.rankings}>
-              {(row) => {
-                const isMe = row.user_id === currentUser?.id
-                const isTop3 = row.rank <= 3
-                return (
-                  <Table.Row
-                    key={row.user_id}
-                    className={[
-                      isTop3 ? 'bg-[color-mix(in_srgb,var(--color-accent)_12%,white)]' : '',
-                      isMe ? 'border-l-[3px] border-l-[var(--color-primary)]' : '',
-                    ]
-                      .filter(Boolean)
-                      .join(' ')}
-                  >
-                    <Table.Cell>
-                      <span className="font-[family-name:var(--font-data)] text-base font-semibold">
-                        {row.rank}
-                      </span>
-                    </Table.Cell>
-                    <Table.Cell>
-                      <span className={isMe ? 'font-medium text-[var(--color-secondary)]' : ''}>
-                        {row.nickname}
-                        {isMe ? '（我）' : ''}
-                      </span>
-                    </Table.Cell>
-                    <Table.Cell className="text-right">
-                      <span className="font-[family-name:var(--font-data)] font-medium">
-                        {formatRankValue(dimension, row.value)}
-                      </span>
-                      <span className="ml-1 text-xs text-[var(--color-text-muted)]">{unit}</span>
-                    </Table.Cell>
-                  </Table.Row>
-                )
-              }}
-            </Table.Body>
+            <Table.Content>
+              <Table.Header>
+                <Table.Column isRowHeader>排名</Table.Column>
+                <Table.Column>用户</Table.Column>
+                <Table.Column className="text-right">
+                  {DIMENSION_OPTIONS.find((d) => d.value === dimension)?.label}
+                </Table.Column>
+              </Table.Header>
+              <Table.Body items={data.rankings}>
+                {(row) => {
+                  const isMe = row.user_id === currentUser?.id
+                  const isTop3 = row.rank <= 3
+                  return (
+                    <Table.Row
+                      key={row.user_id}
+                      id={String(row.user_id)}
+                      className={[
+                        isTop3 ? 'bg-[color-mix(in_srgb,var(--color-accent)_12%,white)]' : '',
+                        isMe ? 'border-l-[3px] border-l-[var(--color-primary)]' : '',
+                      ]
+                        .filter(Boolean)
+                        .join(' ')}
+                    >
+                      <Table.Cell>
+                        <span className="font-[family-name:var(--font-data)] text-base font-semibold">
+                          {row.rank}
+                        </span>
+                      </Table.Cell>
+                      <Table.Cell>
+                        <span className={isMe ? 'font-medium text-[var(--color-secondary)]' : ''}>
+                          {row.nickname}
+                          {isMe ? '（我）' : ''}
+                        </span>
+                      </Table.Cell>
+                      <Table.Cell className="text-right">
+                        <span className="font-[family-name:var(--font-data)] font-medium">
+                          {formatRankValue(dimension, row.value)}
+                        </span>
+                        <span className="ml-1 text-xs text-[var(--color-text-muted)]">{unit}</span>
+                      </Table.Cell>
+                    </Table.Row>
+                  )
+                }}
+              </Table.Body>
+            </Table.Content>
           </Table>
         )}
       </div>
