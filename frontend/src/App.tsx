@@ -1,16 +1,37 @@
-import { Button } from '@heroui/react'
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { ProtectedRoute } from './components/ProtectedRoute'
+import { isAuthenticated } from './store/auth'
+import Login from './pages/auth/Login'
+import Register from './pages/auth/Register'
+import Profile from './pages/profile/Profile'
 
 function App() {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-[var(--color-bg)] p-8">
-      <h1 className="font-[family-name:var(--font-display)] text-3xl font-bold text-[var(--color-text)]">
-        运动打卡系统
-      </h1>
-      <p className="font-[family-name:var(--font-body)] text-[var(--color-text-muted)]">
-        Dawn Track · 晨曦跑道
-      </p>
-      <Button variant="primary">开始打卡</Button>
-    </div>
+    <BrowserRouter>
+      <Routes>
+        <Route
+          path="/"
+          element={
+            isAuthenticated() ? (
+              <Navigate to="/profile" replace />
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          }
+        />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <Profile />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </BrowserRouter>
   )
 }
 
