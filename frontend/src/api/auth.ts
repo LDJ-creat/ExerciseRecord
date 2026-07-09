@@ -49,10 +49,10 @@ export async function getProfile() {
 
 export async function updateProfile(data: {
   nickname?: string
-  avatar_url?: string
+  avatar_url?: string | null
   gender?: number
-  height?: number
-  weight?: number
+  height?: number | null
+  weight?: number | null
 }) {
   const res = await client.put<ApiResponse<UserProfile>>('/user/profile', data)
   return res.data

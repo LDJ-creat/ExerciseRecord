@@ -74,11 +74,11 @@ export default function Profile() {
     try {
       const payload: Parameters<typeof updateProfile>[0] = {
         nickname,
-        avatar_url: avatarUrl || undefined,
+        avatar_url: avatarUrl || null,
         gender: Number(gender),
+        height: height === '' ? null : Number(height),
+        weight: weight === '' ? null : Number(weight),
       }
-      if (height) payload.height = Number(height)
-      if (weight) payload.weight = Number(weight)
 
       const res = await updateProfile(payload)
       if (res.code !== 0 || !res.data) {

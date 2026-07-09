@@ -71,12 +71,10 @@ func (s *AuthService) Register(ctx context.Context, input RegisterInput) (*Regis
 			return err
 		}
 
-		setting := model.ReminderSetting{
-			UserID:    user.ID,
-			IsEnabled: 1,
-		}
-		// remind_time 使用数据库默认值 20:00:00
-		return tx.Omit("RemindTime").Create(&setting).Error
+		return tx.Exec(
+			"INSERT INTO reminder_settings (user_id, is_enabled, remind_time) VALUES (?, 1, '20:00:00')",
+			user.ID,
+		).Error
 	})
 	if err != nil {
 		return nil, fmt.Errorf("create user: %w", err)

@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/exercise-record/backend/internal/model"
+	"github.com/exercise-record/backend/pkg/optional"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
@@ -58,8 +59,8 @@ type UpdateProfileInput struct {
 	Nickname  *string
 	AvatarURL *string
 	Gender    *uint8
-	Height    *float64
-	Weight    *float64
+	Height    optional.Float64
+	Weight    optional.Float64
 }
 
 func (s *UserService) UpdateProfile(ctx context.Context, userID uint64, input UpdateProfileInput) (*ProfileResult, error) {
@@ -80,11 +81,11 @@ func (s *UserService) UpdateProfile(ctx context.Context, userID uint64, input Up
 	if input.Gender != nil {
 		user.Gender = *input.Gender
 	}
-	if input.Height != nil {
-		user.Height = input.Height
+	if input.Height.Defined {
+		user.Height = input.Height.Value
 	}
-	if input.Weight != nil {
-		user.Weight = input.Weight
+	if input.Weight.Defined {
+		user.Weight = input.Weight.Value
 	}
 
 	if err := s.db.WithContext(ctx).Save(&user).Error; err != nil {

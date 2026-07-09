@@ -5,6 +5,7 @@ import (
 
 	"github.com/exercise-record/backend/internal/middleware"
 	"github.com/exercise-record/backend/internal/service"
+	"github.com/exercise-record/backend/pkg/optional"
 	"github.com/exercise-record/backend/pkg/response"
 	"github.com/gin-gonic/gin"
 )
@@ -38,11 +39,11 @@ func (h *UserHandler) GetProfile(c *gin.Context) {
 }
 
 type updateProfileRequest struct {
-	Nickname  *string  `json:"nickname"`
-	AvatarURL *string  `json:"avatar_url"`
-	Gender    *uint8   `json:"gender"`
-	Height    *float64 `json:"height"`
-	Weight    *float64 `json:"weight"`
+	Nickname  *string          `json:"nickname"`
+	AvatarURL *string          `json:"avatar_url"`
+	Gender    *uint8           `json:"gender"`
+	Height    optional.Float64 `json:"height"`
+	Weight    optional.Float64 `json:"weight"`
 }
 
 func (h *UserHandler) UpdateProfile(c *gin.Context) {
