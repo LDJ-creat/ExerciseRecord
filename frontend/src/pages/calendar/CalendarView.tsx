@@ -3,8 +3,10 @@ import { Button, Modal, useOverlayState } from '@heroui/react'
 import dayjs from 'dayjs'
 import { getCalendar, type CalendarDay, type CalendarData } from '../../api/calendar'
 import { getSportTypes, listCheckIns, type CheckInRecord, type SportType } from '../../api/checkin'
-import CalendarHeatmap, { HEAT_LEGEND, heatColor } from '../../components/CalendarHeatmap'
-import { LaneStripe } from '../../components/brand/LaneStripe'
+import CalendarHeatmap, { HEAT_LEGEND, heatColor, MonthSummaryPanel } from '../../components/CalendarHeatmap'
+import { PageHeader } from '../../components/brand/PageHeader'
+import { SkeletonCalendarGrid } from '../../components/brand/SkeletonCalendarGrid'
+import { useDashboardStatus } from '../../hooks/useDashboardStatus'
 import { findSportType, SportBadge } from '../checkin/sportUtils'
 
 export default function CalendarView() {
@@ -103,112 +105,89 @@ export default function CalendarView() {
     }
   }
 
-  const streak = calendar?.streak ?? 0
+  const dashboard = useDashboardStatus()
+
+  const legend = (
+    <div className="mb-4 flex flex-wrap items-center gap-x-4 gap-y-2">
+      <span className="text-xs font-medium text-[var(--color-text-muted)] sm:text-sm">运动量</span>
+      {HEAT_LEGEND.map(({ level, label }) => (
+        <div key={level} className="flex items-center gap-1.5">
+          <span
+            className="h-3.5 w-3.5 rounded-[3px] sm:h-4 sm:w-4"
+            style={{ backgroundColor: heatColor(level) }}
+            aria-hidden
+          />
+          <span className="text-xs text-[var(--color-text-muted)]">{label}</span>
+        </div>
+      ))}
+    </div>
+  )
 
   return (
     <div className="flex flex-col gap-6">
-      <section
-        className="relative overflow-hidden rounded-[var(--radius-md)] p-6 md:p-8"
-        style={{
-          background: 'var(--gradient-dawn)',
-          boxShadow: 'var(--shadow-card)',
-        }}
-      >
-        <div className="relative z-10">
-          <p className="font-[family-name:var(--font-body)] text-sm text-[var(--color-text-muted)]">
-            连续打卡
-          </p>
-          <div className="mt-2 flex flex-wrap items-baseline gap-2">
-            <span
-              className="font-[family-name:var(--font-data)] text-4xl font-semibold"
-              style={{
-                background: 'var(--gradient-streak)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                backgroundClip: 'text',
-              }}
-            >
-              {loading ? '—' : streak}
+      <PageHeader
+        title="运动日历"
+        subtitle="查看每月打卡热力与连续记录"
+        meta={
+          <div className="flex items-baseline gap-1.5 rounded-[var(--radius-sm)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2">
+            <span className="text-body-sm text-[var(--color-text-muted)]">连续</span>
+            <span className={dashboard.loading || loading ? 'text-data-md text-[var(--color-text-muted)]' : 'text-data-md text-streak-number'}>
+              {dashboard.loading || loading ? '—' : (calendar?.streak ?? dashboard.streak)}
             </span>
-            <span className="font-[family-name:var(--font-body)] text-sm text-[var(--color-text-muted)]">
-              天
-            </span>
+            <span className="text-body-sm text-[var(--color-text-muted)]">天</span>
           </div>
-          <p className="mt-3 max-w-md font-[family-name:var(--font-body)] text-[var(--color-text-muted)]">
-            {loading
-              ? '加载连续打卡数据…'
-              : streak > 0
-                ? `保持节奏，已连续 ${streak} 天有运动记录。`
-                : '今天或昨天还没有打卡，开始新的连续记录吧。'}
-          </p>
-        </div>
-        <div className="absolute bottom-4 right-6 hidden md:block">
-          <LaneStripe />
-        </div>
-      </section>
+        }
+      />
 
-      <section
-        className="rounded-[var(--radius-md)] bg-[var(--color-surface)] p-6"
-        style={{ boxShadow: 'var(--shadow-card)' }}
-      >
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-          <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold text-[var(--color-text)]">
-            {year} 年 {month} 月
-          </h2>
-          <div className="flex gap-2">
-            <Button variant="secondary" size="sm" onPress={goPrevMonth}>
-              上月
-            </Button>
-            <Button
-              variant="secondary"
-              size="sm"
-              onPress={() => {
-                const t = new Date()
-                setYear(t.getFullYear())
-                setMonth(t.getMonth() + 1)
-              }}
-            >
-              今天
-            </Button>
-            <Button variant="secondary" size="sm" onPress={goNextMonth}>
-              下月
-            </Button>
+      <div className="grid items-start gap-6 xl:grid-cols-[1fr_280px]">
+        <section
+          className="rounded-[var(--radius-md)] bg-[var(--color-surface)] p-5 sm:p-6"
+          style={{ boxShadow: 'var(--shadow-card)' }}
+        >
+          <div className="mb-5 flex flex-wrap items-center justify-between gap-4 border-b border-[var(--color-border)] pb-4">
+            <h2 className="font-[family-name:var(--font-display)] text-xl font-semibold text-[var(--color-text)] sm:text-2xl">
+              {year} 年 {month} 月
+            </h2>
+            <div className="flex gap-2">
+              <Button variant="secondary" size="sm" onPress={goPrevMonth}>
+                上月
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                onPress={() => {
+                  const t = new Date()
+                  setYear(t.getFullYear())
+                  setMonth(t.getMonth() + 1)
+                }}
+              >
+                今天
+              </Button>
+              <Button variant="secondary" size="sm" onPress={goNextMonth}>
+                下月
+              </Button>
+            </div>
           </div>
-        </div>
 
-        {loading ? (
-          <p className="text-sm text-[var(--color-text-muted)]">加载中…</p>
-        ) : error ? (
-          <p className="text-sm text-[var(--color-danger)]">{error}</p>
-        ) : calendar ? (
-          <CalendarHeatmap
-            year={year}
-            month={month}
-            days={calendar.days}
-            onDayClick={handleDayClick}
-          />
-        ) : null}
+          {loading ? (
+            <SkeletonCalendarGrid />
+          ) : error ? (
+            <p className="text-sm text-[var(--color-danger)]">{error}</p>
+          ) : calendar ? (
+            <CalendarHeatmap
+              year={year}
+              month={month}
+              days={calendar.days}
+              onDayClick={handleDayClick}
+              legend={legend}
+            />
+          ) : null}
+        </section>
 
-        <div className="mt-6 border-t border-[var(--color-border)] pt-4">
-          <p className="mb-3 font-[family-name:var(--font-body)] text-xs font-medium text-[var(--color-text-muted)]">
-            运动量图例
-          </p>
-          <div className="flex flex-wrap items-center gap-4">
-            {HEAT_LEGEND.map(({ level, label }) => (
-              <div key={level} className="flex items-center gap-2">
-                <span
-                  className="h-4 w-4 rounded-[4px]"
-                  style={{ backgroundColor: heatColor(level) }}
-                  aria-hidden
-                />
-                <span className="font-[family-name:var(--font-body)] text-xs text-[var(--color-text-muted)]">
-                  {label}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+        {!loading && calendar && (
+          <MonthSummaryPanel calendar={calendar} />
+        )}
+      </div>
 
       <Modal state={dayModal}>
         <Modal.Backdrop>
