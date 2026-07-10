@@ -7,6 +7,9 @@ import {
   type RankingPeriod,
 } from '../../api/stats'
 import { getUser } from '../../store/auth'
+import { PageHeader } from '../../components/brand/PageHeader'
+import { SkeletonTable } from '../../components/brand/SkeletonTable'
+import { RankingPodium } from '../../components/ranking/RankingPodium'
 
 const DIMENSION_OPTIONS: { value: RankingDimension; label: string; unit: string }[] = [
   { value: 'count', label: '打卡次数', unit: '次' },
@@ -23,6 +26,10 @@ const PERIOD_OPTIONS: { value: RankingPeriod; label: string }[] = [
 function formatRankValue(dimension: RankingDimension, value: number) {
   if (dimension === 'distance') return value.toFixed(1)
   return String(Math.round(value))
+}
+
+function RankDisplay({ rank }: { rank: number }) {
+  return <span className="text-data-md font-semibold">{rank}</span>
 }
 
 export default function RankingPage() {
@@ -65,72 +72,81 @@ export default function RankingPage() {
     return () => controller.abort()
   }, [loadRanking])
 
-  const myRankInList = useMemo(
-    () => data?.rankings.some((row) => row.user_id === currentUser?.id) ?? false,
-    [data, currentUser],
+  const topThree = useMemo(
+    () => (data?.rankings.filter((r) => r.rank <= 3) ?? []),
+    [data],
   )
 
+  const tableRows = useMemo(
+    () => (data?.rankings.filter((r) => r.rank > 3) ?? []),
+    [data],
+  )
+
+  const myRank = data?.my_rank.rank ?? 0
   const myRankLabel =
-    !data || data.my_rank.rank === 0
-      ? '暂未上榜'
-      : `第 ${data.my_rank.rank} 名`
+    !data || myRank === 0 ? '暂未上榜' : `第 ${myRank} 名`
 
   return (
-    <div className="flex flex-col gap-6 animate-[fadeIn_200ms_ease-out]">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold text-[var(--color-text)]">排行榜</h1>
-          <p className="mt-1 text-sm text-[var(--color-text-muted)]">Top 50 与用户排名</p>
-        </div>
-        <div className="flex flex-wrap gap-3">
-          <Select
-            aria-label="排行维度"
-            selectedKey={dimension}
-            onSelectionChange={(key) => {
-              if (key) setDimension(String(key) as RankingDimension)
-            }}
-            className="w-36"
-          >
-            <Label>排行维度</Label>
-            <Select.Trigger>
-              <Select.Value />
-              <Select.Indicator />
-            </Select.Trigger>
-            <Select.Popover>
-              <ListBox>
-                {DIMENSION_OPTIONS.map((opt) => (
-                  <ListBoxItem key={opt.value} id={opt.value} textValue={opt.label}>
-                    {opt.label}
-                  </ListBoxItem>
-                ))}
-              </ListBox>
-            </Select.Popover>
-          </Select>
-          <Select
-            aria-label="统计周期"
-            selectedKey={period}
-            onSelectionChange={(key) => {
-              if (key) setPeriod(String(key) as RankingPeriod)
-            }}
-            className="w-28"
-          >
-            <Label>周期</Label>
-            <Select.Trigger>
-              <Select.Value />
-              <Select.Indicator />
-            </Select.Trigger>
-            <Select.Popover>
-              <ListBox>
-                {PERIOD_OPTIONS.map((opt) => (
-                  <ListBoxItem key={opt.value} id={opt.value} textValue={opt.label}>
-                    {opt.label}
-                  </ListBoxItem>
-                ))}
-              </ListBox>
-            </Select.Popover>
-          </Select>
-        </div>
-      </div>
+    <div
+      className="flex flex-col gap-6 animate-[fadeIn_200ms_ease-out]"
+      style={{
+        backgroundImage: 'radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--color-primary) 3%, transparent) 0%, transparent 50%)',
+      }}
+    >
+      <PageHeader
+        title="排行榜"
+        subtitle="Top 50 与用户排名"
+        actions={
+          <>
+            <Select
+              aria-label="排行维度"
+              selectedKey={dimension}
+              onSelectionChange={(key) => {
+                if (key) setDimension(String(key) as RankingDimension)
+              }}
+              className="w-36"
+            >
+              <Label>排行维度</Label>
+              <Select.Trigger>
+                <Select.Value />
+                <Select.Indicator />
+              </Select.Trigger>
+              <Select.Popover>
+                <ListBox>
+                  {DIMENSION_OPTIONS.map((opt) => (
+                    <ListBoxItem key={opt.value} id={opt.value} textValue={opt.label}>
+                      {opt.label}
+                    </ListBoxItem>
+                  ))}
+                </ListBox>
+              </Select.Popover>
+            </Select>
+            <Select
+              aria-label="统计周期"
+              selectedKey={period}
+              onSelectionChange={(key) => {
+                if (key) setPeriod(String(key) as RankingPeriod)
+              }}
+              className="w-28"
+            >
+              <Label>周期</Label>
+              <Select.Trigger>
+                <Select.Value />
+                <Select.Indicator />
+              </Select.Trigger>
+              <Select.Popover>
+                <ListBox>
+                  {PERIOD_OPTIONS.map((opt) => (
+                    <ListBoxItem key={opt.value} id={opt.value} textValue={opt.label}>
+                      {opt.label}
+                    </ListBoxItem>
+                  ))}
+                </ListBox>
+              </Select.Popover>
+            </Select>
+          </>
+        }
+      />
 
       {error && (
         <div className="rounded-[var(--radius-sm)] border border-[var(--color-danger)]/30 bg-[var(--color-danger)]/5 px-4 py-3 text-sm text-[var(--color-danger)]">
@@ -138,100 +154,94 @@ export default function RankingPage() {
         </div>
       )}
 
-      <div
-        className="overflow-hidden rounded-[var(--radius-md)] bg-[var(--color-surface)]"
-        style={{ boxShadow: 'var(--shadow-card)' }}
-      >
-        {loading ? (
-          <p className="p-6 text-sm text-[var(--color-text-muted)]">加载中…</p>
-        ) : !data || data.rankings.length === 0 ? (
-          <p className="p-6 text-center text-sm text-[var(--color-text-muted)]">
-            当前周期暂无排行数据
-          </p>
-        ) : (
-          <Table aria-label="运动排行榜">
-            <Table.Content>
-              <Table.Header>
-                <Table.Column isRowHeader>排名</Table.Column>
-                <Table.Column>用户</Table.Column>
-                <Table.Column className="text-right">
-                  {DIMENSION_OPTIONS.find((d) => d.value === dimension)?.label}
-                </Table.Column>
-              </Table.Header>
-              <Table.Body items={data.rankings}>
-                {(row) => {
-                  const isMe = row.user_id === currentUser?.id
-                  const isTop3 = row.rank <= 3
-                  return (
-                    <Table.Row
-                      key={row.user_id}
-                      id={String(row.user_id)}
-                      className={[
-                        isTop3 ? 'bg-[color-mix(in_srgb,var(--color-accent)_12%,white)]' : '',
-                        isMe ? 'border-l-[3px] border-l-[var(--color-primary)]' : '',
-                      ]
-                        .filter(Boolean)
-                        .join(' ')}
-                    >
-                      <Table.Cell>
-                        <span className="font-[family-name:var(--font-data)] text-base font-semibold">
-                          {row.rank}
-                        </span>
-                      </Table.Cell>
-                      <Table.Cell>
-                        <span className={isMe ? 'font-medium text-[var(--color-secondary)]' : ''}>
-                          {row.nickname}
-                          {isMe ? '（我）' : ''}
-                        </span>
-                      </Table.Cell>
-                      <Table.Cell className="text-right">
-                        <span className="font-[family-name:var(--font-data)] font-medium">
-                          {formatRankValue(dimension, row.value)}
-                        </span>
-                        <span className="ml-1 text-xs text-[var(--color-text-muted)]">{unit}</span>
-                      </Table.Cell>
-                    </Table.Row>
-                  )
-                }}
-              </Table.Body>
-            </Table.Content>
-          </Table>
-        )}
-      </div>
-
-      {data && !loading && (
-        <div
-          className={[
-            'sticky bottom-0 rounded-[var(--radius-md)] border px-5 py-4',
-            'border-[var(--color-secondary)] bg-[color-mix(in_srgb,var(--color-secondary)_8%,white)]',
-          ].join(' ')}
-          style={{ boxShadow: 'var(--shadow-elevated)' }}
-        >
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <p className="text-sm text-[var(--color-text-muted)]">我的排名</p>
-              <p className="font-[family-name:var(--font-display)] text-xl font-semibold text-[var(--color-text)]">
-                {myRankLabel}
-              </p>
-            </div>
-            {data.my_rank.rank > 0 && (
-              <div className="text-right">
-                <p className="text-sm text-[var(--color-text-muted)]">我的成绩</p>
-                <p className="font-[family-name:var(--font-data)] text-xl font-semibold text-[var(--color-secondary)]">
-                  {formatRankValue(dimension, data.my_rank.value)}
-                  <span className="ml-1 text-sm font-normal text-[var(--color-text-muted)]">
-                    {unit}
-                  </span>
-                </p>
-              </div>
-            )}
+      {loading ? (
+        <SkeletonTable rows={5} />
+      ) : !data || data.rankings.length === 0 ? (
+        <p className="rounded-[var(--radius-md)] bg-[var(--color-surface)] p-6 text-center text-sm text-[var(--color-text-muted)] shadow-[var(--shadow-card)]">
+          当前周期暂无排行数据
+        </p>
+      ) : (
+        <>
+          <div
+            className="overflow-hidden rounded-[var(--radius-md)] bg-[var(--color-surface)]"
+            style={{ boxShadow: 'var(--shadow-card)' }}
+          >
+            <RankingPodium
+              topThree={topThree}
+              dimension={dimension}
+              unit={unit}
+              currentUserId={currentUser?.id}
+              formatValue={formatRankValue}
+            />
           </div>
-          {!myRankInList && data.my_rank.rank > 0 && (
-            <p className="mt-2 text-xs text-[var(--color-text-muted)]">
-              未进入 Top 50，继续加油
-            </p>
+
+          {tableRows.length > 0 && (
+            <div
+              className="overflow-hidden rounded-[var(--radius-md)] bg-[var(--color-surface)]"
+              style={{ boxShadow: 'var(--shadow-card)' }}
+            >
+              <Table aria-label="运动排行榜">
+                <Table.Content>
+                  <Table.Header>
+                    <Table.Column isRowHeader>排名</Table.Column>
+                    <Table.Column>用户</Table.Column>
+                    <Table.Column className="text-right">
+                      {DIMENSION_OPTIONS.find((d) => d.value === dimension)?.label}
+                    </Table.Column>
+                  </Table.Header>
+                  <Table.Body items={tableRows}>
+                    {(row) => {
+                      const isMe = row.user_id === currentUser?.id
+                      return (
+                        <Table.Row
+                          key={row.user_id}
+                          id={String(row.user_id)}
+                          className={isMe ? 'border-l-[3px] border-l-[var(--color-primary)]' : ''}
+                        >
+                          <Table.Cell>
+                            <RankDisplay rank={row.rank} />
+                          </Table.Cell>
+                          <Table.Cell>
+                            <span className={isMe ? 'font-medium text-[var(--color-secondary)]' : ''}>
+                              {row.nickname}
+                              {isMe ? '（我）' : ''}
+                            </span>
+                          </Table.Cell>
+                          <Table.Cell className="text-right">
+                            <span className="font-[family-name:var(--font-data)] font-medium">
+                              {formatRankValue(dimension, row.value)}
+                            </span>
+                            <span className="ml-1 text-xs text-[var(--color-text-muted)]">{unit}</span>
+                          </Table.Cell>
+                        </Table.Row>
+                      )
+                    }}
+                  </Table.Body>
+                </Table.Content>
+              </Table>
+            </div>
           )}
-        </div>
+
+          {myRank > 3 && (
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-[var(--radius-md)] border border-[var(--color-secondary)] bg-[color-mix(in_srgb,var(--color-secondary)_8%,white)] px-5 py-3">
+              <div className="flex items-baseline gap-2">
+                <span className="text-sm text-[var(--color-text-muted)]">我的排名</span>
+                <span className="font-[family-name:var(--font-display)] text-lg font-semibold text-[var(--color-text)]">
+                  {myRankLabel}
+                </span>
+              </div>
+              {myRank > 0 && (
+                <div className="flex items-baseline gap-2">
+                  <span className="text-sm text-[var(--color-text-muted)]">我的成绩</span>
+                  <span className="font-[family-name:var(--font-data)] text-lg font-semibold text-[var(--color-secondary)]">
+                    {formatRankValue(dimension, data.my_rank.value)}
+                    <span className="ml-1 text-sm font-normal text-[var(--color-text-muted)]">{unit}</span>
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
+        </>
       )}
     </div>
   )
