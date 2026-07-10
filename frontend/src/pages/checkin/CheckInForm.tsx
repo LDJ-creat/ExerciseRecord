@@ -5,9 +5,6 @@ import {
   DatePicker,
   Input,
   Label,
-  ListBox,
-  ListBoxItem,
-  Select,
   TextField,
 } from '@heroui/react'
 import {
@@ -20,10 +17,10 @@ import {
   getSportTypes,
   type SportType,
 } from '../../api/checkin'
-import { SportBadge } from './sportUtils'
+import { SportTypeGrid } from '../../components/checkin/SportTypeGrid'
 
 interface CheckInFormProps {
-  onSuccess?: () => void
+  onSuccess?: (message: string) => void
 }
 
 function formatCalendarDate(date: CalendarDate) {
@@ -42,7 +39,6 @@ export default function CheckInForm({ onSuccess }: CheckInFormProps) {
   const [calories, setCalories] = useState('')
   const [remark, setRemark] = useState('')
   const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
   const selectedSport = sportTypes.find((t) => String(t.id) === sportTypeId) ?? null
@@ -62,7 +58,6 @@ export default function CheckInForm({ onSuccess }: CheckInFormProps) {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
-    setSuccess('')
 
     if (!sportTypeId) {
       setError('请选择运动类型')
@@ -109,12 +104,12 @@ export default function CheckInForm({ onSuccess }: CheckInFormProps) {
         }
         return
       }
-      setSuccess('打卡成功')
+      const sportName = selectedSport?.name ?? '运动'
+      onSuccess?.(`已记录 · ${sportName} ${durationNum} 分钟`)
       setDuration('')
       setDistance('')
       setCalories('')
       setRemark('')
-      onSuccess?.()
     } catch (err: unknown) {
       const axiosErr = err as { response?: { data?: { code?: number; message?: string } } }
       if (axiosErr.response?.data?.code === 40901) {
@@ -129,45 +124,23 @@ export default function CheckInForm({ onSuccess }: CheckInFormProps) {
 
   return (
     <section
+      id="checkin-form"
       className="rounded-[var(--radius-md)] bg-[var(--color-surface)] p-6"
       style={{ boxShadow: 'var(--shadow-card)' }}
     >
-      <h2 className="mb-4 font-[family-name:var(--font-display)] text-lg font-semibold text-[var(--color-text)]">
-        新建打卡
-      </h2>
+      <h2 className="text-heading mb-4 text-[var(--color-text)]">新建打卡</h2>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <Select
-          selectedKey={sportTypeId}
-          onSelectionChange={(key) => setSportTypeId(String(key))}
-          fullWidth
-        >
-          <Label>运动类型</Label>
-          <Select.Trigger>
-            <Select.Value>
-              {({ selectedText }) =>
-                selectedSport ? (
-                  <span className="flex items-center gap-2">
-                    <SportBadge sport={selectedSport} size="sm" />
-                    {!selectedText && selectedSport.name}
-                  </span>
-                ) : (
-                  selectedText
-                )
-              }
-            </Select.Value>
-            <Select.Indicator />
-          </Select.Trigger>
-          <Select.Popover>
-            <ListBox>
-              {sportTypes.map((sport) => (
-                <ListBoxItem key={String(sport.id)} id={String(sport.id)} textValue={sport.name}>
-                  <SportBadge sport={sport} size="sm" />
-                </ListBoxItem>
-              ))}
-            </ListBox>
-          </Select.Popover>
-        </Select>
+        <div>
+          <Label className="mb-2 block">运动类型</Label>
+          {sportTypes.length > 0 && (
+            <SportTypeGrid
+              sports={sportTypes}
+              selectedId={sportTypeId}
+              onSelect={setSportTypeId}
+            />
+          )}
+        </div>
 
         <DatePicker
           value={checkDate}
@@ -256,9 +229,6 @@ export default function CheckInForm({ onSuccess }: CheckInFormProps) {
           <p className="text-sm text-[var(--color-danger)]" role="alert">
             {error}
           </p>
-        )}
-        {success && (
-          <p className="text-sm text-[var(--color-secondary)]">{success}</p>
         )}
 
         <Button type="submit" variant="primary" isPending={submitting}>

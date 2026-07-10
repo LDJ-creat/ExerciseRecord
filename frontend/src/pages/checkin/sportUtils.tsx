@@ -1,4 +1,5 @@
 import type { SportType } from '../../api/checkin'
+import { SportIcon as SportIconSvg } from '../../components/icons/AppIcons'
 
 const SPORT_CLASS: Record<string, string> = {
   running: 'sport-running',
@@ -13,6 +14,10 @@ export function getSportClass(code: string) {
   return SPORT_CLASS[code] ?? 'sport-other'
 }
 
+export function SportIcon({ code, className = 'h-6 w-6' }: { code: string; className?: string }) {
+  return <SportIconSvg code={code} className={className} />
+}
+
 interface SportBadgeProps {
   sport?: SportType | null
   size?: 'sm' | 'md'
@@ -20,7 +25,7 @@ interface SportBadgeProps {
 
 export function SportBadge({ sport, size = 'md' }: SportBadgeProps) {
   if (!sport) return null
-  const dim = size === 'sm' ? 'h-2.5 w-2.5' : 'h-3 w-3'
+  const iconSize = size === 'sm' ? 'h-3.5 w-3.5' : 'h-4 w-4'
   return (
     <span
       className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium ${getSportClass(sport.code)}`}
@@ -29,11 +34,7 @@ export function SportBadge({ sport, size = 'md' }: SportBadgeProps) {
         color: 'var(--sport-color)',
       }}
     >
-      <span
-        className={`${dim} rounded-full`}
-        style={{ backgroundColor: 'var(--sport-color)' }}
-        aria-hidden
-      />
+      <SportIcon code={sport.code} className={iconSize} />
       {sport.name}
     </span>
   )

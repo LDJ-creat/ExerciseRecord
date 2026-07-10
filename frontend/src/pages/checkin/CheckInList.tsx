@@ -5,11 +5,7 @@ import {
   DatePicker,
   Input,
   Label,
-  ListBox,
-  ListBoxItem,
   Modal,
-  Select,
-  Table,
   TextField,
   useOverlayState,
 } from '@heroui/react'
@@ -28,11 +24,16 @@ import {
   type CheckInRecord,
   type SportType,
 } from '../../api/checkin'
-import { findSportType, SportBadge } from './sportUtils'
+import { ActivityCard } from '../../components/checkin/ActivityCard'
+import { SportTypeGrid } from '../../components/checkin/SportTypeGrid'
+import { EmptyState } from '../../components/brand/EmptyState'
+import { SkeletonTimeline } from '../../components/brand/SkeletonCalendarGrid'
+import { findSportType } from './sportUtils'
 
 interface CheckInListProps {
   refreshKey?: number
   onMutate?: () => void
+  onScrollToForm?: () => void
 }
 
 function formatCalendarDate(date: CalendarDate) {
@@ -41,7 +42,11 @@ function formatCalendarDate(date: CalendarDate) {
   return `${date.year}-${month}-${day}`
 }
 
-export default function CheckInList({ refreshKey = 0, onMutate }: CheckInListProps) {
+export default function CheckInList({
+  refreshKey = 0,
+  onMutate,
+  onScrollToForm,
+}: CheckInListProps) {
   const [sportTypes, setSportTypes] = useState<SportType[]>([])
   const [items, setItems] = useState<CheckInRecord[]>([])
   const [total, setTotal] = useState(0)
@@ -198,16 +203,16 @@ export default function CheckInList({ refreshKey = 0, onMutate }: CheckInListPro
       style={{ boxShadow: 'var(--shadow-card)' }}
     >
       <div className="mb-4 flex flex-wrap items-end justify-between gap-4">
-        <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold text-[var(--color-text)]">
+        <h2 className="text-heading text-[var(--color-text)]">
           打卡记录
-          <span className="ml-2 font-[family-name:var(--font-data)] text-sm font-normal text-[var(--color-text-muted)]">
+          <span className="ml-2 text-data-md font-normal text-[var(--color-text-muted)]">
             共 {total} 条
           </span>
         </h2>
 
-        <div className="flex flex-wrap items-end gap-3">
+        <div className="flex flex-wrap items-end gap-2">
           <TextField>
-            <Label className="text-xs">开始日期</Label>
+            <Label className="text-xs">开始</Label>
             <Input
               type="date"
               value={filterStart}
@@ -215,7 +220,7 @@ export default function CheckInList({ refreshKey = 0, onMutate }: CheckInListPro
             />
           </TextField>
           <TextField>
-            <Label className="text-xs">结束日期</Label>
+            <Label className="text-xs">结束</Label>
             <Input
               type="date"
               value={filterEnd}
@@ -223,7 +228,7 @@ export default function CheckInList({ refreshKey = 0, onMutate }: CheckInListPro
             />
           </TextField>
           <div>
-            <Label className="mb-1.5 block text-xs">运动类型</Label>
+            <Label className="mb-1.5 block text-xs">类型</Label>
             <select
               value={filterSportType}
               onChange={(e) => setFilterSportType(e.target.value)}
@@ -245,69 +250,39 @@ export default function CheckInList({ refreshKey = 0, onMutate }: CheckInListPro
       </div>
 
       {loading ? (
-        <p className="text-sm text-[var(--color-text-muted)]">加载中…</p>
+        <SkeletonTimeline items={3} />
       ) : error ? (
         <p className="text-sm text-[var(--color-danger)]">{error}</p>
       ) : items.length === 0 ? (
-        <p className="text-sm text-[var(--color-text-muted)]">暂无打卡记录，完成第一次打卡吧</p>
+        <EmptyState
+          title="今天还没有记录"
+          description="完成第一次打卡，把今天算进节奏里"
+          actionLabel="去打卡"
+          onAction={onScrollToForm}
+        />
       ) : (
-        <Table aria-label="打卡记录">
-          <Table.Content>
-            <Table.Header>
-              <Table.Column>日期</Table.Column>
-              <Table.Column>运动类型</Table.Column>
-              <Table.Column>时长</Table.Column>
-              <Table.Column>距离</Table.Column>
-              <Table.Column>卡路里</Table.Column>
-              <Table.Column>备注</Table.Column>
-              <Table.Column>操作</Table.Column>
-            </Table.Header>
-            <Table.Body items={items}>
-              {(item) => {
-                const sport = findSportType(sportTypes, item.sport_type_id)
-                return (
-                  <Table.Row key={item.id} id={String(item.id)}>
-                    <Table.Cell>
-                      <span className="font-[family-name:var(--font-data)] text-sm">
-                        {item.check_date}
-                      </span>
-                      {item.is_makeup === 1 && (
-                        <span className="ml-2 rounded-full bg-[var(--color-accent)]/15 px-2 py-0.5 text-xs font-medium text-[var(--color-accent)]">
-                          补录
-                        </span>
-                      )}
-                    </Table.Cell>
-                    <Table.Cell>
-                      <SportBadge sport={sport} size="sm" />
-                    </Table.Cell>
-                    <Table.Cell>
-                      <span className="font-[family-name:var(--font-data)]">{item.duration} 分</span>
-                    </Table.Cell>
-                    <Table.Cell>
-                      {item.distance != null ? `${item.distance} km` : '—'}
-                    </Table.Cell>
-                    <Table.Cell>
-                      {item.calories != null ? item.calories : '—'}
-                    </Table.Cell>
-                    <Table.Cell className="max-w-[120px] truncate">
-                      {item.remark || '—'}
-                    </Table.Cell>
-                    <Table.Cell>
-                      <div className="flex gap-2">
-                        <Button variant="ghost" size="sm" onPress={() => openEdit(item)}>
-                          编辑
-                        </Button>
-                        <Button variant="ghost" size="sm" onPress={() => openDelete(item)}>
-                          删除
-                        </Button>
-                      </div>
-                    </Table.Cell>
-                  </Table.Row>
-                )
-              }}
-            </Table.Body>
-          </Table.Content>
-        </Table>
+        <ul className="relative flex flex-col gap-4 pl-4">
+          {items.map((item, index) => (
+            <li key={item.id} className="relative pl-6">
+              {index < items.length - 1 && (
+                <span
+                  className="absolute left-[7px] top-8 bottom-0 w-px bg-[var(--color-border)]"
+                  aria-hidden
+                />
+              )}
+              <span
+                className="absolute left-0 top-3 h-3.5 w-3.5 rounded-full border-2 border-[var(--color-primary)] bg-[var(--color-surface)]"
+                aria-hidden
+              />
+              <ActivityCard
+                record={item}
+                sportTypes={sportTypes}
+                onEdit={openEdit}
+                onDelete={openDelete}
+              />
+            </li>
+          ))}
+        </ul>
       )}
 
       <Modal state={editModal}>
@@ -318,26 +293,14 @@ export default function CheckInList({ refreshKey = 0, onMutate }: CheckInListPro
                 <Modal.Heading>编辑打卡</Modal.Heading>
               </Modal.Header>
               <Modal.Body className="flex flex-col gap-4">
-                <Select
-                  selectedKey={editSportTypeId}
-                  onSelectionChange={(key) => setEditSportTypeId(String(key))}
-                  fullWidth
-                >
-                  <Label>运动类型</Label>
-                  <Select.Trigger>
-                    <Select.Value />
-                    <Select.Indicator />
-                  </Select.Trigger>
-                  <Select.Popover>
-                    <ListBox>
-                      {sportTypes.map((sport) => (
-                        <ListBoxItem key={String(sport.id)} id={String(sport.id)} textValue={sport.name}>
-                          <SportBadge sport={sport} size="sm" />
-                        </ListBoxItem>
-                      ))}
-                    </ListBox>
-                  </Select.Popover>
-                </Select>
+                <div>
+                  <Label className="mb-2 block">运动类型</Label>
+                  <SportTypeGrid
+                    sports={sportTypes}
+                    selectedId={editSportTypeId}
+                    onSelect={setEditSportTypeId}
+                  />
+                </div>
 
                 <DatePicker
                   value={editDate}
@@ -442,9 +405,9 @@ export default function CheckInList({ refreshKey = 0, onMutate }: CheckInListPro
                 <Modal.Heading>确认删除</Modal.Heading>
               </Modal.Header>
               <Modal.Body>
-                <p className="text-sm text-[var(--color-text-muted)]">
+                <p className="text-body-sm text-[var(--color-text-muted)]">
                   确定删除{' '}
-                  <span className="font-[family-name:var(--font-data)] text-[var(--color-text)]">
+                  <span className="text-data-md text-[var(--color-text)]">
                     {deleting ? dayjs(deleting.check_date).format('YYYY-MM-DD') : ''}
                   </span>{' '}
                   的打卡记录吗？此操作不可撤销。
