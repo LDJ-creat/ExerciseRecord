@@ -1,5 +1,5 @@
-import StatsDashboard from './StatsDashboard'
+import { Navigate } from 'react-router-dom'
 
 export default function StatsPage() {
-  return <StatsDashboard />
+  return <Navigate to="/insights" replace />
 }

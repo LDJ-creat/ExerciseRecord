@@ -6,6 +6,7 @@ import Login from '../pages/auth/Login'
 import Register from '../pages/auth/Register'
 import CalendarPage from '../pages/calendar/CalendarPage'
 import CheckInPage from '../pages/checkin/CheckInPage'
+import InsightsPage from '../pages/insights/InsightsPage'
 import GoalsPage from '../pages/goals/GoalsPage'
 import Profile from '../pages/profile/Profile'
 import RankingPage from '../pages/ranking/RankingPage'
@@ -33,6 +34,7 @@ export function AppRouter() {
         }
       >
         <Route path="/checkin" element={<CheckInPage />} />
+        <Route path="/insights" element={<InsightsPage />} />
         <Route path="/goals" element={<GoalsPage />} />
         <Route path="/stats" element={<StatsPage />} />
         <Route path="/ranking" element={<RankingPage />} />
