@@ -1,6 +1,8 @@
 @import "tailwindcss";
 @import "@heroui/styles";
+@import "./styles/heroui-theme.css";
 @import "./styles/design-tokens.css";
+@import "./styles/auth-hero.css";
 
 @keyframes fadeIn {
   from {

@@ -1,0 +1,50 @@
+/* Auth hero — login/register left panel */
+.auth-hero {
+  background: var(--gradient-dawn);
+}
+
+.auth-hero__orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  pointer-events: none;
+}
+
+.auth-hero__orb--primary {
+  top: -8%;
+  right: -5%;
+  width: 320px;
+  height: 320px;
+  background: color-mix(in srgb, var(--color-primary) 22%, transparent);
+}
+
+.auth-hero__preview-card {
+  box-shadow: var(--shadow-elevated);
+  animation: auth-float 6s ease-in-out infinite;
+}
+
+.auth-hero__preview-card--delay {
+  animation-delay: -3s;
+}
+
+@keyframes auth-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+.auth-hero__track {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 38%;
+  min-height: 200px;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-hero__preview-card,
+  .auth-hero__preview-card--delay {
+    animation: none;
+  }
+}

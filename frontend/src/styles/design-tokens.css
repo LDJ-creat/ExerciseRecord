@@ -1,5 +1,8 @@
 /* 运动打卡系统 — Design Tokens
- * 在 frontend/src/index.css 中 @import 本文件（位于 tailwind/heroui 之后）
+ * Gradient Usage Contract:
+ * 1. --gradient-dawn: AuthHero 左栏、EmptyState 仅此两处
+ * 2. --gradient-streak / .text-streak-gradient: Auth 标题「运动」强调词仅此
+ * 3. Streak 数字、进度、头像禁止使用渐变，用 --color-streak 纯色
  */
 
 :root {
@@ -15,6 +18,9 @@
   --color-text-muted: #64748B;
   --color-border: #E2E8F0;
   --color-danger: #EF4444;
+  --color-streak: var(--color-primary);
+  --surface-status: var(--color-surface);
+  --nav-active-bg: #FFF0EB;
 
   /* Heatmap */
   --color-heatmap-0: #E2E8F0;
@@ -31,6 +37,11 @@
   --radius-sm: 8px;
   --radius-md: 12px;
   --radius-lg: 16px;
+  --radius-full: 9999px;
+
+  /* Motion */
+  --motion-fast: 150ms;
+  --motion-normal: 400ms;
 
   /* Shadow */
   --shadow-card: 0 1px 3px rgba(30, 41, 59, 0.08);
@@ -42,7 +53,6 @@
   --font-data: "JetBrains Mono", "Consolas", monospace;
 }
 
-/* Sport type badges */
 .sport-running { --sport-color: #FF5C35; }
 .sport-walking { --sport-color: #8B5CF6; }
 .sport-cycling { --sport-color: #3B82F6; }
@@ -50,10 +60,20 @@
 .sport-fitness { --sport-color: #F59E0B; }
 .sport-other { --sport-color: #94A3B8; }
 
-/* Lane Stripe signature animation */
 .lane-stripe {
   transform: rotate(-2deg);
   max-width: 200px;
+}
+
+.lane-stripe--hero {
+  max-width: none;
+  width: 100%;
+  gap: 0.375rem;
+  padding-block: 0.5rem;
+}
+
+.lane-stripe--hero .lane-stripe__line {
+  height: 4px;
 }
 
 .lane-stripe__line {
@@ -93,10 +113,40 @@
   }
 }
 
+.pressable {
+  transition: transform var(--motion-fast) ease-out;
+}
+
+.pressable:active {
+  transform: scale(0.98);
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+
+  .pressable:active {
+    transform: none;
+  }
+}
+
+.track-pattern {
+  background-color: var(--color-bg);
+  background-image: repeating-linear-gradient(
+    -12deg,
+    transparent 0,
+    transparent 22px,
+    rgba(226, 232, 240, 0.45) 22px,
+    rgba(226, 232, 240, 0.45) 23px
+  );
+  background-size: 48px 48px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .track-pattern {
+    background-image: none;
   }
 }
