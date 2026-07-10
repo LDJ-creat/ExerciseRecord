@@ -1,83 +1,25 @@
 import { useState } from 'react'
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { Button } from '@heroui/react'
+import { StreakBadge } from './brand/StreakBadge'
+import { AppLogo, IconCalendar, IconCheckin, IconInsights, IconRanking, IconSettings } from './icons/AppIcons'
 import { clearAuth, getUser } from '../store/auth'
 import { useReminder } from '../hooks/useReminder'
 
 const NAV_ITEMS = [
-  { path: '/checkin', label: '打卡', icon: NavIconCheckin },
-  { path: '/goals', label: '目标', icon: NavIconGoals },
-  { path: '/stats', label: '统计', icon: NavIconStats },
-  { path: '/ranking', label: '排行', icon: NavIconRanking },
-  { path: '/calendar', label: '日历', icon: NavIconCalendar },
-  { path: '/settings', label: '设置', icon: NavIconSettings },
+  { path: '/checkin', label: '打卡', icon: IconCheckin },
+  { path: '/insights', label: '数据', icon: IconInsights },
+  { path: '/ranking', label: '排行', icon: IconRanking },
+  { path: '/calendar', label: '日历', icon: IconCalendar },
+  { path: '/settings', label: '设置', icon: IconSettings },
 ] as const
-
-function NavIconCheckin() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path
-        d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-      />
-    </svg>
-  )
-}
-
-function NavIconGoals() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" />
-      <circle cx="12" cy="12" r="4" stroke="currentColor" strokeWidth="2" />
-      <circle cx="12" cy="12" r="1" fill="currentColor" />
-    </svg>
-  )
-}
-
-function NavIconStats() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M4 19V5M4 19h16M8 17V11M12 17V7M16 17v-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-    </svg>
-  )
-}
-
-function NavIconRanking() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M8 21V10M12 21V3M16 21v-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-    </svg>
-  )
-}
-
-function NavIconCalendar() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="2" />
-      <path d="M3 10h18M8 2v4M16 2v4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-    </svg>
-  )
-}
-
-function NavIconSettings() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="2" />
-      <path
-        d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-      />
-    </svg>
-  )
-}
 
 function isNavActive(pathname: string, navPath: string) {
   if (navPath === '/settings') {
     return pathname === '/settings' || pathname.startsWith('/settings/')
+  }
+  if (navPath === '/insights') {
+    return pathname === '/insights' || pathname === '/goals' || pathname === '/stats'
   }
   return pathname === navPath || pathname.startsWith(`${navPath}/`)
 }
@@ -95,16 +37,17 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
             to={path}
             onClick={onNavigate}
             className={[
-              'flex items-center gap-3 rounded-[var(--radius-sm)] px-3 py-2.5',
-              'font-[family-name:var(--font-body)] text-sm font-medium transition-colors',
+              'relative flex items-center gap-3 rounded-[var(--radius-sm)] px-3 py-2.5',
+              'text-sm font-medium transition-colors duration-150',
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]',
+              'pressable',
               active
-                ? 'bg-[var(--color-primary)] text-white'
-                : 'text-[var(--color-text-muted)] hover:bg-[var(--color-surface)] hover:text-[var(--color-text)]',
+                ? 'border-l-[3px] border-l-[var(--color-primary)] bg-[var(--nav-active-bg)] pl-[calc(0.75rem-3px)] text-[var(--color-primary)]'
+                : 'border-l-[3px] border-l-transparent text-[var(--color-text-muted)] hover:bg-[var(--color-surface)] hover:text-[var(--color-text)]',
             ].join(' ')}
             aria-current={active ? 'page' : undefined}
           >
-            <Icon />
+            <Icon size={20} />
             {label}
           </Link>
         )
@@ -131,7 +74,7 @@ export function AppLayout() {
   return (
     <div className="flex min-h-screen flex-col bg-[var(--color-bg)]">
       <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center justify-between border-b border-[var(--color-border)] bg-[var(--color-surface)] px-4 md:px-6">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5">
           <Button
             variant="ghost"
             size="sm"
@@ -145,14 +88,18 @@ export function AppLayout() {
           </Button>
           <Link
             to="/checkin"
-            className="font-[family-name:var(--font-display)] text-lg font-bold text-[var(--color-text)]"
+            className="flex items-center gap-2 text-lg font-bold text-[var(--color-text)] lg:hidden"
           >
-            运动打卡
+            <span className="text-[var(--color-primary)]">
+              <AppLogo size={22} />
+            </span>
+            <span className="font-[family-name:var(--font-display)]">运动打卡</span>
           </Link>
         </div>
 
         <div className="flex items-center gap-3">
-          <span className="hidden font-[family-name:var(--font-body)] text-sm text-[var(--color-text-muted)] sm:inline">
+          <StreakBadge />
+          <span className="hidden text-sm text-[var(--color-text-muted)] sm:inline">
             {user?.nickname ?? user?.username ?? '用户'}
           </span>
           <Button variant="ghost" size="sm" onPress={handleLogout}>
@@ -162,7 +109,16 @@ export function AppLayout() {
       </header>
 
       <div className="flex flex-1 overflow-hidden">
-        <aside className="hidden w-52 shrink-0 border-r border-[var(--color-border)] bg-[var(--color-surface-elevated)] lg:block">
+        <aside className="hidden w-52 shrink-0 flex-col border-r border-[var(--color-border)] bg-[var(--color-surface-elevated)] lg:flex">
+          <Link
+            to="/checkin"
+            className="flex items-center gap-2.5 border-b border-[var(--color-border)] px-4 py-4 text-lg font-bold text-[var(--color-text)]"
+          >
+            <span className="text-[var(--color-primary)]">
+              <AppLogo size={22} />
+            </span>
+            <span className="font-[family-name:var(--font-display)]">运动打卡</span>
+          </Link>
           <SidebarNav />
         </aside>
 
@@ -174,13 +130,13 @@ export function AppLayout() {
               aria-label="关闭导航菜单"
               onClick={closeSidebar}
             />
-            <aside className="fixed inset-y-0 left-0 z-50 w-64 border-r border-[var(--color-border)] bg-[var(--color-surface-elevated)] pt-14 shadow-[var(--shadow-elevated)] lg:hidden">
+            <aside className="fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-[var(--color-border)] bg-[var(--color-surface-elevated)] pt-14 shadow-[var(--shadow-elevated)] lg:hidden">
               <SidebarNav onNavigate={closeSidebar} />
             </aside>
           </>
         )}
 
-        <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
+        <main className="track-pattern flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
           <div className="mx-auto max-w-6xl animate-[fadeIn_200ms_ease-out]">
             <Outlet />
           </div>
