@@ -141,7 +141,7 @@ export default function StatsDashboard({
           {(mode === 'full' || mode === 'charts-only') && (
             <div className="grid gap-6 lg:grid-cols-2">
               <StatsDistributionChart data={data} />
-              <StatsTrendChart data={data} />
+              <StatsTrendChart data={data} period={period} />
             </div>
           )}
         </>

@@ -23,6 +23,9 @@ export interface TrendPoint {
   date: string
   duration: number
   distance: number
+  calories: number
+  count: number
+  primary_sport?: string
 }
 
 export interface PersonalStatsData {
@@ -57,6 +60,17 @@ export async function getPersonalStats(period: StatsPeriod = 'month') {
   const res = await client.get<ApiResponse<PersonalStatsData>>('/stats/personal', {
     params: { period },
   })
+  const data = res.data.data
+  if (data?.trend) {
+    data.trend = data.trend.map((point) => ({
+      ...point,
+      date: point.date.slice(0, 10),
+      duration: Number(point.duration ?? 0),
+      distance: Number(point.distance ?? 0),
+      calories: Number(point.calories ?? 0),
+      count: Number(point.count ?? 0),
+    }))
+  }
   return res.data
 }
 

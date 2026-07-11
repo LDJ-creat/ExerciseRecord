@@ -6,8 +6,14 @@ function formatNumber(value: number) {
 }
 
 export function SummaryStatRow({ summary }: { summary: PersonalStatsSummary }) {
+  const showDistance = summary.total_distance > 0
+  const showCalories = summary.total_calories > 0
+
   return (
-    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <div
+      className="grid gap-4 sm:grid-cols-2"
+      style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))' }}
+    >
       <StatCard
         label="打卡次数"
         value={formatNumber(summary.total_count)}
@@ -20,18 +26,22 @@ export function SummaryStatRow({ summary }: { summary: PersonalStatsSummary }) {
         unit="分钟"
         icon={STAT_ICONS.duration}
       />
-      <StatCard
-        label="运动距离"
-        value={summary.total_distance.toFixed(1)}
-        unit="km"
-        icon={STAT_ICONS.distance}
-      />
-      <StatCard
-        label="消耗卡路里"
-        value={formatNumber(summary.total_calories)}
-        unit="kcal"
-        icon={STAT_ICONS.calories}
-      />
+      {showDistance && (
+        <StatCard
+          label="运动距离"
+          value={summary.total_distance.toFixed(1)}
+          unit="km"
+          icon={STAT_ICONS.distance}
+        />
+      )}
+      {showCalories && (
+        <StatCard
+          label="消耗卡路里"
+          value={formatNumber(summary.total_calories)}
+          unit="kcal"
+          icon={STAT_ICONS.calories}
+        />
+      )}
     </div>
   )
 }

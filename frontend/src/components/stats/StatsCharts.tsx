@@ -1,18 +1,28 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { Button } from '@heroui/react'
 import {
   Area,
   Cell,
   Legend,
-  Line,
-  LineChart,
   Pie,
   PieChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
+  AreaChart,
 } from 'recharts'
-import type { PersonalStatsData } from '../../api/stats'
+import type { PersonalStatsData, StatsPeriod } from '../../api/stats'
+import { EmptyState } from '../brand/EmptyState'
+import {
+  METRIC_CONFIG,
+  countActiveDays,
+  fillTrendSeries,
+  formatTrendDateLabel,
+  getAvailableMetrics,
+  getMetricValue,
+  type TrendMetric,
+} from './trendUtils'
 
 const SPORT_COLORS: Record<number, string> = {
   1: '#FF5C35',
@@ -87,8 +97,35 @@ export function StatsDistributionChart({ data }: { data: PersonalStatsData }) {
   )
 }
 
-export function StatsTrendChart({ data }: { data: PersonalStatsData }) {
-  const trendData = data.trend ?? []
+interface StatsTrendChartProps {
+  data: PersonalStatsData
+  period: StatsPeriod
+}
+
+export function StatsTrendChart({ data, period }: StatsTrendChartProps) {
+  const availableMetrics = useMemo(
+    () => getAvailableMetrics(data.summary),
+    [data.summary],
+  )
+  const [metric, setMetric] = useState<TrendMetric>('duration')
+
+  useEffect(() => {
+    if (!availableMetrics.includes(metric)) {
+      setMetric('duration')
+    }
+  }, [availableMetrics, metric])
+
+  const config = METRIC_CONFIG[metric]
+  const chartData = useMemo(() => {
+    const filled = fillTrendSeries(data.trend ?? [], period)
+    return filled.map((point) => ({
+      ...point,
+      value: getMetricValue(point, metric),
+    }))
+  }, [data.trend, period, metric])
+
+  const activeDays = useMemo(() => countActiveDays(chartData), [chartData])
+  const hasData = data.summary.total_count > 0
 
   return (
     <section
@@ -96,74 +133,91 @@ export function StatsTrendChart({ data }: { data: PersonalStatsData }) {
       style={{ boxShadow: 'var(--shadow-card)' }}
       aria-label="运动趋势"
     >
-      <h2 className="text-lg font-semibold text-[var(--color-text)]">趋势分析</h2>
-      {trendData.length === 0 ? (
-        <p className="mt-8 text-center text-sm text-[var(--color-text-muted)]">
-          当前周期暂无趋势数据
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-semibold text-[var(--color-text)]">{config.title}</h2>
+          <p className="mt-1 text-sm text-[var(--color-text-muted)]">
+            {hasData ? `本周期共打卡 ${activeDays} 天` : '记录每日运动变化'}
+          </p>
+        </div>
+
+        {availableMetrics.length > 1 && (
+          <div className="flex flex-wrap gap-2" role="group" aria-label="趋势指标">
+            {availableMetrics.map((key) => (
+              <Button
+                key={key}
+                type="button"
+                size="sm"
+                variant={metric === key ? 'primary' : 'ghost'}
+                onPress={() => setMetric(key)}
+              >
+                {METRIC_CONFIG[key].label}
+              </Button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {!hasData ? (
+        <div className="mt-4">
+          <EmptyState
+            title="当前周期暂无运动记录"
+            description="完成打卡后，这里会展示每日运动趋势"
+          />
+        </div>
       ) : (
         <ResponsiveContainer width="100%" height={280} className="mt-4">
-          <LineChart data={trendData}>
+          <AreaChart data={chartData}>
             <defs>
-              <linearGradient id="durationGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="var(--color-secondary)" stopOpacity={0.15} />
-                <stop offset="100%" stopColor="var(--color-secondary)" stopOpacity={0} />
+              <linearGradient id={`trendGradient-${metric}`} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={config.color} stopOpacity={0.18} />
+                <stop offset="100%" stopColor={config.color} stopOpacity={0} />
               </linearGradient>
             </defs>
             <XAxis
               dataKey="date"
               tick={{ fill: 'var(--color-text-muted)', fontSize: 12 }}
-              tickFormatter={(v: string) => v.slice(5)}
+              tickFormatter={formatTrendDateLabel}
+              interval="preserveStartEnd"
             />
-            <YAxis yAxisId="duration" tick={{ fill: 'var(--color-text-muted)', fontSize: 12 }} />
             <YAxis
-              yAxisId="distance"
-              orientation="right"
               tick={{ fill: 'var(--color-text-muted)', fontSize: 12 }}
-            />
-            <Tooltip
-              labelFormatter={(label) => `日期 ${label}`}
-              formatter={(value, name) => {
-                const num = typeof value === 'number' ? value : Number(value ?? 0)
-                const key = String(name)
-                return [
-                  key === 'duration' ? `${num} 分钟` : `${num} km`,
-                  key === 'duration' ? '时长' : '距离',
-                ]
+              width={52}
+              allowDecimals={metric !== 'calories'}
+              domain={[0, 'auto']}
+              label={{
+                value: config.unit,
+                angle: -90,
+                position: 'insideLeft',
+                offset: 8,
+                style: { fill: 'var(--color-text-muted)', fontSize: 12 },
               }}
             />
-            <Legend
-              verticalAlign="bottom"
-              iconType="line"
-              formatter={(value) => (value === 'duration' ? '时长' : '距离')}
-              wrapperStyle={{ fontSize: 12, color: 'var(--color-text-muted)' }}
+            <Tooltip
+              labelFormatter={(label) => {
+                const point = chartData.find((item) => item.date === label)
+                const dateText = String(label).replace(/-/g, '/')
+                if (point?.primary_sport) {
+                  return `${dateText} · ${point.primary_sport}`
+                }
+                return dateText
+              }}
+              formatter={(value) => {
+                const num = typeof value === 'number' ? value : Number(value ?? 0)
+                return [config.formatValue(num), config.label]
+              }}
             />
             <Area
               type="monotone"
-              dataKey="duration"
-              yAxisId="duration"
-              fill="url(#durationGradient)"
-              stroke="none"
-            />
-            <Line
-              type="monotone"
-              dataKey="duration"
-              yAxisId="duration"
-              stroke="var(--color-secondary)"
+              dataKey="value"
+              name={config.label}
+              stroke={config.color}
               strokeWidth={2}
-              dot={{ fill: 'var(--color-secondary)', r: 3 }}
-              activeDot={{ fill: 'var(--color-primary)', r: 5 }}
+              fill={`url(#trendGradient-${metric})`}
+              dot={{ fill: config.color, r: 3 }}
+              activeDot={{ fill: config.color, r: 5 }}
             />
-            <Line
-              type="monotone"
-              dataKey="distance"
-              yAxisId="distance"
-              stroke="var(--color-primary)"
-              strokeWidth={2}
-              dot={{ fill: 'var(--color-primary)', r: 3 }}
-              activeDot={{ fill: 'var(--color-primary)', r: 5 }}
-            />
-          </LineChart>
+          </AreaChart>
         </ResponsiveContainer>
       )}
     </section>

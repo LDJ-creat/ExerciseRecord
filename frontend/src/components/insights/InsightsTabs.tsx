@@ -115,7 +115,7 @@ export function InsightsTabs() {
           {loading ? (
             <div className="h-72 animate-pulse rounded-[var(--radius-md)] bg-[var(--color-surface-elevated)]" />
           ) : data ? (
-            <StatsTrendChart data={data} />
+            <StatsTrendChart data={data} period={period} />
           ) : null}
         </Tabs.Panel>
 
