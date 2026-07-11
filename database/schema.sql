@@ -36,10 +36,13 @@ CREATE TABLE IF NOT EXISTS `sport_types` (
   `need_calories`  TINYINT UNSIGNED NOT NULL DEFAULT 0 COMMENT '是否需要卡路里',
   `is_active`      TINYINT UNSIGNED NOT NULL DEFAULT 1 COMMENT '1启用 0停用',
   `sort_order`     INT             NOT NULL DEFAULT 0 COMMENT '排序',
+  `user_id`        BIGINT UNSIGNED DEFAULT NULL COMMENT 'NULL=系统内置，非NULL=用户自定义',
   `created_at`     DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at`     DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_sport_types_code` (`code`)
+  UNIQUE KEY `uk_sport_types_code` (`code`),
+  KEY `idx_sport_types_user` (`user_id`),
+  CONSTRAINT `fk_sport_types_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='运动类型字典';
 
 -- -----------------------------------------------------
