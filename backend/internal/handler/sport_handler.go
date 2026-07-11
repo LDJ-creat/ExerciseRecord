@@ -1,45 +1,76 @@
 package handler
 
 import (
-	"github.com/exercise-record/backend/internal/model"
+	"errors"
+
+	"github.com/exercise-record/backend/internal/middleware"
+	"github.com/exercise-record/backend/internal/service"
 	"github.com/exercise-record/backend/pkg/response"
 	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 )
 
 type SportHandler struct {
-	db *gorm.DB
+	sportService *service.SportService
 }
 
-func NewSportHandler(db *gorm.DB) *SportHandler {
-	return &SportHandler{db: db}
+func NewSportHandler(sportService *service.SportService) *SportHandler {
+	return &SportHandler{sportService: sportService}
 }
 
-type sportTypeItem struct {
-	ID           uint64 `json:"id"`
-	Code         string `json:"code"`
-	Name         string `json:"name"`
-	NeedDistance uint8  `json:"need_distance"`
-	NeedCalories uint8  `json:"need_calories"`
+type createSportTypeRequest struct {
+	Name         string `json:"name" binding:"required"`
+	NeedDistance bool   `json:"need_distance"`
+	NeedCalories bool   `json:"need_calories"`
 }
 
 func (h *SportHandler) List(c *gin.Context) {
-	var types []model.SportType
-	if err := h.db.Where("is_active = ?", 1).Order("sort_order ASC").Find(&types).Error; err != nil {
+	userID, ok := middleware.GetUserID(c)
+	if !ok {
+		response.Unauthorized(c, "unauthorized")
+		return
+	}
+
+	items, err := h.sportService.ListForUser(c.Request.Context(), userID)
+	if err != nil {
 		response.ServerError(c, "failed to load sport types")
 		return
 	}
 
-	items := make([]sportTypeItem, len(types))
-	for i, st := range types {
-		items[i] = sportTypeItem{
-			ID:           st.ID,
-			Code:         st.Code,
-			Name:         st.Name,
-			NeedDistance: st.NeedDistance,
-			NeedCalories: st.NeedCalories,
-		}
+	response.OK(c, items)
+}
+
+func (h *SportHandler) Create(c *gin.Context) {
+	userID, ok := middleware.GetUserID(c)
+	if !ok {
+		response.Unauthorized(c, "unauthorized")
+		return
 	}
 
-	response.OK(c, items)
+	var req createSportTypeRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "invalid request body")
+		return
+	}
+
+	item, err := h.sportService.CreateCustom(c.Request.Context(), userID, service.CreateCustomSportTypeInput{
+		Name:         req.Name,
+		NeedDistance: req.NeedDistance,
+		NeedCalories: req.NeedCalories,
+	})
+	if err != nil {
+		switch {
+		case errors.Is(err, service.ErrSportNameRequired),
+			errors.Is(err, service.ErrSportNameTooLong):
+			response.BadRequest(c, err.Error())
+		case errors.Is(err, service.ErrDuplicateSportName):
+			response.Conflict(c, "已存在同名自定义类型")
+		case errors.Is(err, service.ErrCustomSportLimit):
+			response.BadRequest(c, "自定义类型数量已达上限")
+		default:
+			response.ServerError(c, "failed to create sport type")
+		}
+		return
+	}
+
+	response.OK(c, item)
 }

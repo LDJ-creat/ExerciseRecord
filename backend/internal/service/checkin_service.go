@@ -89,7 +89,7 @@ func (s *CheckInService) Create(ctx context.Context, userID uint64, input Create
 		return nil, ErrFutureDate
 	}
 
-	if err := s.ensureSportTypeActive(ctx, input.SportTypeID); err != nil {
+	if err := s.ensureSportTypeActive(ctx, userID, input.SportTypeID); err != nil {
 		return nil, err
 	}
 
@@ -228,7 +228,7 @@ func (s *CheckInService) Update(ctx context.Context, userID, checkInID uint64, i
 	}
 
 	if input.SportTypeID != nil {
-		if err := s.ensureSportTypeActive(ctx, *input.SportTypeID); err != nil {
+		if err := s.ensureSportTypeActive(ctx, userID, *input.SportTypeID); err != nil {
 			return nil, err
 		}
 		record.SportTypeID = *input.SportTypeID
@@ -270,10 +270,10 @@ func (s *CheckInService) findCheckIn(ctx context.Context, checkInID uint64) (*mo
 	return &record, nil
 }
 
-func (s *CheckInService) ensureSportTypeActive(ctx context.Context, sportTypeID uint64) error {
+func (s *CheckInService) ensureSportTypeActive(ctx context.Context, userID, sportTypeID uint64) error {
 	var count int64
 	if err := s.db.WithContext(ctx).Model(&model.SportType{}).
-		Where("id = ? AND is_active = ?", sportTypeID, 1).
+		Where("id = ? AND is_active = 1 AND (user_id IS NULL OR user_id = ?)", sportTypeID, userID).
 		Count(&count).Error; err != nil {
 		return fmt.Errorf("check sport type: %w", err)
 	}

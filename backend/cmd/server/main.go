@@ -29,7 +29,8 @@ func main() {
 	reminderService := service.NewReminderService(db)
 	authHandler := handler.NewAuthHandler(authService, cfg.JWTSecret)
 	userHandler := handler.NewUserHandler(userService)
-	sportHandler := handler.NewSportHandler(db)
+	sportService := service.NewSportService(db)
+	sportHandler := handler.NewSportHandler(sportService)
 	checkInHandler := handler.NewCheckInHandler(checkInService)
 	goalHandler := handler.NewGoalHandler(goalService)
 	statsHandler := handler.NewStatsHandler(statsService)
@@ -58,6 +59,7 @@ func main() {
 		}
 
 		api.GET("/sport-types", middleware.AuthMiddleware(cfg.JWTSecret), sportHandler.List)
+		api.POST("/sport-types", middleware.AuthMiddleware(cfg.JWTSecret), sportHandler.Create)
 
 		checkin := api.Group("/checkin")
 		checkin.Use(middleware.AuthMiddleware(cfg.JWTSecret))
