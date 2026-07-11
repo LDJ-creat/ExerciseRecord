@@ -45,9 +45,12 @@ type SportTypeStat struct {
 }
 
 type TrendPoint struct {
-	Date     string  `json:"date"`
-	Duration uint64  `json:"duration"`
-	Distance float64 `json:"distance"`
+	Date         string  `json:"date"`
+	Duration     uint64  `json:"duration"`
+	Distance     float64 `json:"distance"`
+	Calories     uint64  `json:"calories"`
+	Count        int64   `json:"count"`
+	PrimarySport string  `json:"primary_sport,omitempty"`
 }
 
 type PersonalStatsResult struct {
@@ -110,7 +113,10 @@ func (s *StatsService) GetPersonalStats(ctx context.Context, userID uint64, peri
 	if err != nil {
 		return nil, err
 	}
-	trend := aggregateTrend(rows)
+	trend, err := s.buildTrend(ctx, rows)
+	if err != nil {
+		return nil, err
+	}
 
 	return &PersonalStatsResult{
 		Summary:     summary,
@@ -398,30 +404,104 @@ func (s *StatsService) aggregateBySportType(ctx context.Context, rows []checkInR
 	return result, nil
 }
 
-func aggregateTrend(rows []checkInRow) []TrendPoint {
-	buckets := make(map[string]*TrendPoint)
+type trendDayAgg struct {
+	duration       uint64
+	distance       float64
+	calories       uint64
+	count          int64
+	sportDurations map[uint64]uint64
+}
+
+func formatCheckDate(t time.Time) string {
+	return t.In(time.Local).Format("2006-01-02")
+}
+
+func aggregateTrendRows(rows []checkInRow) (map[string]*trendDayAgg, []string) {
+	buckets := make(map[string]*trendDayAgg)
 	var dates []string
 
 	for _, row := range rows {
-		date := row.CheckDate.Format("2006-01-02")
-		point, ok := buckets[date]
+		date := formatCheckDate(row.CheckDate)
+		day, ok := buckets[date]
 		if !ok {
-			point = &TrendPoint{Date: date}
-			buckets[date] = point
+			day = &trendDayAgg{sportDurations: make(map[uint64]uint64)}
+			buckets[date] = day
 			dates = append(dates, date)
 		}
-		point.Duration += uint64(row.Duration)
+		day.count++
+		day.duration += uint64(row.Duration)
 		if row.Distance != nil {
-			point.Distance += *row.Distance
+			day.distance += *row.Distance
 		}
+		if row.Calories != nil {
+			day.calories += uint64(*row.Calories)
+		}
+		day.sportDurations[row.SportTypeID] += uint64(row.Duration)
 	}
 
 	sort.Strings(dates)
+	return buckets, dates
+}
+
+func primarySportTypeID(day *trendDayAgg) uint64 {
+	var sportID uint64
+	var maxDur uint64
+	for id, dur := range day.sportDurations {
+		if dur > maxDur {
+			maxDur = dur
+			sportID = id
+		}
+	}
+	return sportID
+}
+
+func (s *StatsService) buildTrend(ctx context.Context, rows []checkInRow) ([]TrendPoint, error) {
+	if len(rows) == 0 {
+		return []TrendPoint{}, nil
+	}
+
+	buckets, dates := aggregateTrendRows(rows)
+
+	sportIDs := make(map[uint64]struct{})
+	for _, date := range dates {
+		if id := primarySportTypeID(buckets[date]); id != 0 {
+			sportIDs[id] = struct{}{}
+		}
+	}
+
+	ids := make([]uint64, 0, len(sportIDs))
+	for id := range sportIDs {
+		ids = append(ids, id)
+	}
+
+	nameByID := make(map[uint64]string, len(ids))
+	if len(ids) > 0 {
+		var sportTypes []model.SportType
+		if err := s.db.WithContext(ctx).
+			Select("id", "name").
+			Where("id IN ?", ids).
+			Find(&sportTypes).Error; err != nil {
+			return nil, err
+		}
+		for _, st := range sportTypes {
+			nameByID[st.ID] = st.Name
+		}
+	}
+
 	result := make([]TrendPoint, 0, len(dates))
 	for _, date := range dates {
-		result = append(result, *buckets[date])
+		day := buckets[date]
+		primaryID := primarySportTypeID(day)
+		result = append(result, TrendPoint{
+			Date:         date,
+			Duration:     day.duration,
+			Distance:     day.distance,
+			Calories:     day.calories,
+			Count:        day.count,
+			PrimarySport: nameByID[primaryID],
+		})
 	}
-	return result
+	return result, nil
 }
 
 func periodDateRange(period string) (*time.Time, *time.Time, error) {

@@ -210,6 +210,35 @@ func TestPersonalStats_EmptyData(t *testing.T) {
 	assert.Empty(t, result.Trend)
 }
 
+func TestPersonalStats_TrendCalories(t *testing.T) {
+	db := setupTestDB(t)
+	seedSportTypes(t, db)
+	userID := createTestUser(t, db, "trend_calories_user")
+	checkInSvc := NewCheckInService(db)
+	ctx := context.Background()
+
+	today := todayDate().Format("2006-01-02")
+	calories := uint(300)
+
+	_, err := checkInSvc.Create(ctx, userID, CreateCheckInInput{
+		SportTypeID: 5,
+		CheckDate:   today,
+		Duration:    30,
+		Calories:    &calories,
+	})
+	require.NoError(t, err)
+
+	svc := NewStatsService(db)
+	result, err := svc.GetPersonalStats(ctx, userID, "month")
+	require.NoError(t, err)
+
+	assert.Equal(t, uint64(300), result.Summary.TotalCalories)
+	require.Len(t, result.Trend, 1)
+	assert.Equal(t, today, result.Trend[0].Date)
+	assert.Equal(t, uint64(300), result.Trend[0].Calories)
+	assert.Equal(t, "健身", result.Trend[0].PrimarySport)
+}
+
 func TestPersonalStats_TrendAndByPeriod(t *testing.T) {
 	db := setupTestDB(t)
 	seedSportTypes(t, db)
@@ -237,9 +266,12 @@ func TestPersonalStats_TrendAndByPeriod(t *testing.T) {
 	require.Len(t, result.Trend, 2)
 	assert.Equal(t, yesterday.Format("2006-01-02"), result.Trend[0].Date)
 	assert.Equal(t, uint64(20), result.Trend[0].Duration)
+	assert.Equal(t, int64(1), result.Trend[0].Count)
 	assert.Equal(t, today.Format("2006-01-02"), result.Trend[1].Date)
 	assert.Equal(t, uint64(30), result.Trend[1].Duration)
+	assert.Equal(t, int64(1), result.Trend[1].Count)
 	assert.InDelta(t, 4.0, result.Trend[1].Distance, 0.01)
+	assert.Equal(t, "跑步", result.Trend[1].PrimarySport)
 
 	require.Len(t, result.ByPeriod, 2)
 }
