@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react'
 import {
   Button,
-  Calendar,
-  DatePicker,
   Input,
   Label,
   TextField,
+  useOverlayState,
 } from '@heroui/react'
+import { CustomSportTypeDialog } from '../../components/checkin/CustomSportTypeDialog'
+import { CheckInDateField, CheckInDateLabel } from '../../components/checkin/CheckInDateField'
 import {
   getLocalTimeZone,
   today,
@@ -40,9 +41,15 @@ export default function CheckInForm({ onSuccess }: CheckInFormProps) {
   const [remark, setRemark] = useState('')
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const customSportModal = useOverlayState()
 
   const selectedSport = sportTypes.find((t) => String(t.id) === sportTypeId) ?? null
   const isMakeup = checkDate.compare(maxDate) < 0
+
+  function handleCustomSportCreated(sport: SportType) {
+    setSportTypes((prev) => [...prev, sport])
+    setSportTypeId(String(sport.id))
+  }
 
   useEffect(() => {
     getSportTypes()
@@ -138,45 +145,17 @@ export default function CheckInForm({ onSuccess }: CheckInFormProps) {
               sports={sportTypes}
               selectedId={sportTypeId}
               onSelect={setSportTypeId}
+              onAddCustom={customSportModal.open}
             />
           )}
         </div>
 
-        <DatePicker
+        <CheckInDateField
+          label={<CheckInDateLabel isMakeup={isMakeup} />}
           value={checkDate}
-          onChange={(value) => value && setCheckDate(value)}
+          onChange={setCheckDate}
           maxValue={maxDate}
-        >
-          <div className="flex items-center gap-2">
-            <Label>打卡日期</Label>
-            {isMakeup && (
-              <span className="rounded-full bg-[var(--color-accent)]/15 px-2 py-0.5 text-xs font-medium text-[var(--color-accent)]">
-                补录
-              </span>
-            )}
-          </div>
-          <DatePicker.Trigger className="flex w-full items-center justify-between rounded-[var(--radius-sm)] border border-[var(--color-border)] px-3 py-2 font-[family-name:var(--font-data)] text-sm">
-            {formatCalendarDate(checkDate)}
-            <DatePicker.TriggerIndicator />
-          </DatePicker.Trigger>
-          <DatePicker.Popover>
-            <Calendar>
-              <Calendar.Header>
-                <Calendar.NavButton slot="previous" />
-                <Calendar.Heading />
-                <Calendar.NavButton slot="next" />
-              </Calendar.Header>
-              <Calendar.Grid>
-                <Calendar.GridHeader>
-                  {(day) => <Calendar.HeaderCell>{day}</Calendar.HeaderCell>}
-                </Calendar.GridHeader>
-                <Calendar.GridBody>
-                  {(date) => <Calendar.Cell date={date} />}
-                </Calendar.GridBody>
-              </Calendar.Grid>
-            </Calendar>
-          </DatePicker.Popover>
-        </DatePicker>
+        />
 
         <TextField isRequired>
           <Label>时长 (分钟)</Label>
@@ -235,6 +214,8 @@ export default function CheckInForm({ onSuccess }: CheckInFormProps) {
           提交打卡
         </Button>
       </form>
+
+      <CustomSportTypeDialog state={customSportModal} onCreated={handleCustomSportCreated} />
     </section>
   )
 }

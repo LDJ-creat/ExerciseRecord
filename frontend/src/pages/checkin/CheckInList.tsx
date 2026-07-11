@@ -1,14 +1,13 @@
 import { useCallback, useEffect, useState } from 'react'
 import {
   Button,
-  Calendar,
-  DatePicker,
   Input,
   Label,
   Modal,
   TextField,
   useOverlayState,
 } from '@heroui/react'
+import { CheckInDateField, CheckInDateLabel } from '../../components/checkin/CheckInDateField'
 import {
   getLocalTimeZone,
   parseDate,
@@ -25,6 +24,7 @@ import {
   type SportType,
 } from '../../api/checkin'
 import { ActivityCard } from '../../components/checkin/ActivityCard'
+import { CustomSportTypeDialog } from '../../components/checkin/CustomSportTypeDialog'
 import { SportTypeGrid } from '../../components/checkin/SportTypeGrid'
 import { EmptyState } from '../../components/brand/EmptyState'
 import { SkeletonTimeline } from '../../components/brand/SkeletonCalendarGrid'
@@ -59,6 +59,7 @@ export default function CheckInList({
 
   const editModal = useOverlayState()
   const deleteModal = useOverlayState()
+  const customSportModal = useOverlayState()
   const [editing, setEditing] = useState<CheckInRecord | null>(null)
   const [deleting, setDeleting] = useState<CheckInRecord | null>(null)
 
@@ -74,6 +75,11 @@ export default function CheckInList({
   const maxDate = today(getLocalTimeZone())
   const editSport = findSportType(sportTypes, Number(editSportTypeId))
   const editIsMakeup = editDate.compare(maxDate) < 0
+
+  function handleCustomSportCreated(sport: SportType) {
+    setSportTypes((prev) => [...prev, sport])
+    setEditSportTypeId(String(sport.id))
+  }
 
   const loadList = useCallback(async () => {
     setLoading(true)
@@ -299,44 +305,16 @@ export default function CheckInList({
                     sports={sportTypes}
                     selectedId={editSportTypeId}
                     onSelect={setEditSportTypeId}
+                    onAddCustom={customSportModal.open}
                   />
                 </div>
 
-                <DatePicker
+                <CheckInDateField
+                  label={<CheckInDateLabel isMakeup={editIsMakeup} />}
                   value={editDate}
-                  onChange={(value) => value && setEditDate(value)}
+                  onChange={setEditDate}
                   maxValue={maxDate}
-                >
-                  <div className="flex items-center gap-2">
-                    <Label>打卡日期</Label>
-                    {editIsMakeup && (
-                      <span className="rounded-full bg-[var(--color-accent)]/15 px-2 py-0.5 text-xs font-medium text-[var(--color-accent)]">
-                        补录
-                      </span>
-                    )}
-                  </div>
-                  <DatePicker.Trigger className="flex w-full items-center justify-between rounded-[var(--radius-sm)] border border-[var(--color-border)] px-3 py-2 font-[family-name:var(--font-data)] text-sm">
-                    {formatCalendarDate(editDate)}
-                    <DatePicker.TriggerIndicator />
-                  </DatePicker.Trigger>
-                  <DatePicker.Popover>
-                    <Calendar>
-                      <Calendar.Header>
-                        <Calendar.NavButton slot="previous" />
-                        <Calendar.Heading />
-                        <Calendar.NavButton slot="next" />
-                      </Calendar.Header>
-                      <Calendar.Grid>
-                        <Calendar.GridHeader>
-                          {(day) => <Calendar.HeaderCell>{day}</Calendar.HeaderCell>}
-                        </Calendar.GridHeader>
-                        <Calendar.GridBody>
-                          {(date) => <Calendar.Cell date={date} />}
-                        </Calendar.GridBody>
-                      </Calendar.Grid>
-                    </Calendar>
-                  </DatePicker.Popover>
-                </DatePicker>
+                />
 
                 <TextField isRequired>
                   <Label>时长 (分钟)</Label>
@@ -428,6 +406,8 @@ export default function CheckInList({
           </Modal.Container>
         </Modal.Backdrop>
       </Modal>
+
+      <CustomSportTypeDialog state={customSportModal} onCreated={handleCustomSportCreated} />
     </section>
   )
 }

@@ -185,6 +185,12 @@ export function SportIcon({ code, className = 'h-6 w-6', size }: IconProps & { c
           <path d="M8 12h8" {...stroke} />
         </svg>
       )
+    case 'custom':
+      return (
+        <svg {...s}>
+          <path d="M12 5v14M5 12h14" {...stroke} />
+        </svg>
+      )
     default:
       return (
         <svg {...s}>

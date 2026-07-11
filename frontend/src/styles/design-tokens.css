@@ -59,6 +59,7 @@
 .sport-swimming { --sport-color: #06B6D4; }
 .sport-fitness { --sport-color: #F59E0B; }
 .sport-other { --sport-color: #94A3B8; }
+.sport-custom { --sport-color: #6366F1; }
 
 .lane-stripe {
   transform: rotate(-2deg);

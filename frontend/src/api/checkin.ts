@@ -7,6 +7,13 @@ export interface SportType {
   name: string
   need_distance: number
   need_calories: number
+  is_custom?: number
+}
+
+export interface CreateSportTypePayload {
+  name: string
+  need_distance?: boolean
+  need_calories?: boolean
 }
 
 export interface CheckInRecord {
@@ -55,6 +62,11 @@ export interface ListCheckInsParams {
 
 export async function getSportTypes() {
   const res = await client.get<ApiResponse<SportType[]>>('/sport-types')
+  return res.data
+}
+
+export async function createSportType(data: CreateSportTypePayload) {
+  const res = await client.post<ApiResponse<SportType>>('/sport-types', data)
   return res.data
 }
 

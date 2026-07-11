@@ -10,7 +10,8 @@ const SPORT_CLASS: Record<string, string> = {
   other: 'sport-other',
 }
 
-export function getSportClass(code: string) {
+export function getSportClass(code: string, isCustom?: number) {
+  if (isCustom === 1 || code.startsWith('custom_')) return 'sport-custom'
   return SPORT_CLASS[code] ?? 'sport-other'
 }
 
@@ -28,7 +29,7 @@ export function SportBadge({ sport, size = 'md' }: SportBadgeProps) {
   const iconSize = size === 'sm' ? 'h-3.5 w-3.5' : 'h-4 w-4'
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium ${getSportClass(sport.code)}`}
+      className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium ${getSportClass(sport.code, sport.is_custom)}`}
       style={{
         backgroundColor: 'color-mix(in srgb, var(--sport-color) 15%, white)',
         color: 'var(--sport-color)',
